@@ -22,6 +22,8 @@ Documentation: https://dibiso-upsaclay.github.io/dibisoplot/
 
 Repository URL: https://github.com/dibiso-upsaclay/dibisoplot
 
+Repository DOI: https://doi.org/10.5281/zenodo.17251536
+
 Technical report: https://universite-paris-saclay.hal.science/hal-05336463
 
 

@@ -49,3 +49,4 @@ myModule = ["dibisoplot/biso/HAL_doc_types_names.toml"]
 Homepage = "https://pypi.org/project/dibisoplot/"
 Repository = "https://github.com/dibiso-upsaclay/dibisoplot"
 Documentation = "https://dibiso-upsaclay.github.io/dibisoplot/"
+DOI = "https://doi.org/10.5281/zenodo.17251536"
