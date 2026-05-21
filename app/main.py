@@ -37,13 +37,11 @@ scanr_api_username = os.getenv("SCANR_API_USERNAME")
 scanr_bso_index = os.getenv("SCANR_BSO_INDEX")
 scanr_publications_index = os.getenv("SCANR_PUBLICATIONS_INDEX")
 projects_persistence_time_hours = int(os.getenv("PROJECTS_PERSISTENCE_TIME_HOURS"))
-latex_main_file_url = os.getenv("LATEX_MAIN_FILE_URL")
-latex_biblio_file_url = os.getenv("LATEX_BIBLIO_FILE_URL")
-latex_template_url = os.getenv("LATEX_TEMPLATE_URL")
+analyses_retention_days = int(os.getenv("PROJECTS_ANALYSES_RETENTION_DAYS", "30"))
+html_template_url = os.getenv("HTML_TEMPLATE_URL")
 openalex_analysis_cache_path = os.getenv("OPENALEX_ANALYSIS_CACHE_PATH")
 openalex_api_key = os.getenv("OPENALEX_API_KEY")
 openalex_email = os.getenv("OPENALEX_EMAIL")
-latex_compile_timeout_seconds = int(os.getenv("LATEX_COMPILE_TIMEOUT_SECONDS", "180"))  # Default 1 minute
 
 # Authentication Imports
 from fastapi.security import OAuth2PasswordRequestForm
@@ -78,7 +76,11 @@ from .users import (
     get_all_users,
     init_database,
     is_admin,
-    delete_user_by_id  # Add this import
+    delete_user_by_id,
+    get_analyses,
+    upsert_analysis,
+    delete_analyses,
+    delete_old_analyses,
 )
 
 
@@ -111,8 +113,35 @@ compilation_lock = threading.Lock()
 
 # Add these new global variables for process management
 data_fetching_processes: Dict[str, subprocess.Popen] = {}
-latex_compilation_processes: Dict[str, subprocess.Popen] = {}
 process_lock = threading.Lock()
+
+# Section registry per report type
+REPORT_SECTIONS: Dict[str, list] = {
+    "biso": [
+        {"id": "works_type",                    "label": "Typologie de la production scientifique"},
+        {"id": "journals_hal",                  "label": "Liste des revues (HAL)"},
+        {"id": "journals",                      "label": "Revues et voies d'accès"},
+        {"id": "conferences",                   "label": "Liste des conférences"},
+        {"id": "chapters",                      "label": "Liste des chapitres"},
+        {"id": "open_access_works",             "label": "Articles en accès ouvert"},
+        {"id": "collaboration_map_world",       "label": "Carte des collaborations mondiales"},
+        {"id": "collaboration_map_europe",      "label": "Carte des collaborations européennes"},
+        {"id": "collaboration_names",           "label": "Collaborations par établissements"},
+        {"id": "private_sector_collaborations", "label": "Collaborations secteur privé"},
+        {"id": "european_projects",             "label": "Projets européens"},
+        {"id": "anr_projects",                  "label": "Projets ANR"},
+        {"id": "strengths",      "label": "Atouts du laboratoire",  "figure": False},
+        {"id": "recommendations","label": "Préconisations",         "figure": False},
+    ],
+    "pubpart": [
+        {"id": "topics_collaborations",               "label": "Principales thématiques"},
+        {"id": "topics_potential_collaborations",     "label": "Potentiel de collaboration"},
+        {"id": "institutions_lineage_collaborations", "label": "Top 25 structures internes"},
+        {"id": "works_collaborations_normalized",     "label": "Top 25 co-publications (citations normalisées)"},
+        {"id": "works_collaborations_count",          "label": "Top 25 co-publications (citations)"},
+        {"id": "analysis", "label": "Analyse", "figure": False},
+    ],
+}
 
 
 # Cleanup old compilation statuses and files (run periodically)
@@ -135,9 +164,19 @@ async def cleanup_old_compilations():
 
                 for comp_id in to_remove_status:
                     del compilation_status[comp_id]
+                    try:
+                        delete_analyses(comp_id)
+                    except Exception as e:
+                        logger.error(f"Error deleting analyses for {comp_id}: {e}")
 
             if to_remove_status:
                 logger.info(f"Cleaned up {len(to_remove_status)} old compilation statuses from memory.")
+
+            # Delete analyses older than analyses_retention_days
+            try:
+                delete_old_analyses(analyses_retention_days)
+            except Exception as e:
+                logger.error(f"Error in old analyses cleanup: {e}")
 
             # --- Clean up old temporary directories on file system ---
             temp_root_dir = Path(tempfile.gettempdir())
@@ -146,7 +185,7 @@ async def cleanup_old_compilations():
             # Iterate through all entries in the temporary directory
             for entry in temp_root_dir.iterdir():
                 # Check if it's a directory and starts with the expected prefix
-                if entry.is_dir() and entry.name.startswith("latex_output_"):
+                if entry.is_dir() and (entry.name.startswith("html_output_") or entry.name.startswith("latex_project_")):
                     try:
                         # Get the last modification time of the directory
                         # This serves as a proxy for creation time for these temporary folders.
@@ -675,6 +714,56 @@ def launch_latex_compile_command(comp_id, progress, project_folder, tex_file, pa
     )
 
 
+def render_html_to_pdf(project_dir: Path, output_dir: Path, comp_id: str) -> list[Optional[Path]]:
+    """
+    Render report.html / biblio.html → PDF via WeasyPrint.
+    Returns [report_pdf_path_or_None, biblio_pdf_path_or_None].
+    """
+    with compilation_lock:
+        if compilation_status.get(comp_id, {}).get('status') == 'cancelled':
+            return [None, None]
+
+    from dibisoreporting import DibisoReporting
+    import markdown
+
+    update_compilation_status(comp_id, 72, "Rendering HTML report...")
+
+    # Load analyses from DB and convert Markdown → HTML
+    user_id = compilation_status[comp_id].get('user_id')
+    raw_analyses = get_analyses(comp_id, user_id) if user_id else {}
+    analyses_html = {k: markdown.markdown(v) for k, v in raw_analyses.items() if v}
+
+    try:
+        DibisoReporting.render_from_saved(str(project_dir), analyses_html)
+    except Exception as e:
+        logger.error(f"Jinja2 render failed for {comp_id}: {e}")
+        update_compilation_status(comp_id, 0, f"Report rendering failed: {e}", "failed")
+        return [None, None]
+
+    from weasyprint import HTML as WeasyprintHTML
+    results = []
+    for name, progress in [("report", 80), ("biblio", 88)]:
+        html_path = project_dir / f"{name}.html"
+        if not html_path.exists():
+            results.append(None)
+            continue
+        with compilation_lock:
+            if compilation_status.get(comp_id, {}).get('status') == 'cancelled':
+                return [None, None]
+        update_compilation_status(comp_id, progress, f"Converting {name}.html to PDF...")
+        try:
+            pdf_path = output_dir / f"{name}.pdf"
+            WeasyprintHTML(filename=str(html_path)).write_pdf(str(pdf_path), presentational_hints=True)
+            # Also copy HTML to output dir for download
+            shutil.copy2(str(html_path), str(output_dir / f"{name}.html"))
+            results.append(pdf_path)
+        except Exception as e:
+            logger.error(f"WeasyPrint failed for {name}: {e}")
+            results.append(None)
+
+    return results
+
+
 def compile_latex_with_progress(project_folder: Path, comp_id: str) -> list[Optional[Path]]:
     """
     Compile LaTeX project in the given folder with progress updates and cancellation support.
@@ -802,9 +891,7 @@ biso_reporting = Biso(
     {request_data.year},
     entity_acronym="{request_data.entity_acronym}",
     entity_full_name="{request_data.entity_full_name}",
-    latex_main_file_url="{latex_main_file_url}",
-    latex_biblio_file_url="{latex_biblio_file_url}",
-    latex_template_url="{latex_template_url}",
+    html_template_url="{html_template_url}",
     max_entities={request_data.max_entities},
     root_path="{project_dir}",
     watermark_text="",
@@ -958,14 +1045,18 @@ def run_compilation(comp_id: str, request_data: ReportRequest):
                 logger.info(f"Compilation {comp_id} cancelled during initialization.")
                 return
 
-        # Generate the LaTeX project (this is the long-running part)
-        logger.info(f"Generating LaTeX project for {comp_id}...")
+        # Generate the report project (data fetching + figure generation, long-running)
+        logger.info(f"Generating report project for {comp_id}...")
         project_folder = your_latex_project_generator(comp_id, request_data)
 
         # CRITICAL: Exit immediately if project generation failed or was cancelled
         if project_folder is None:
             logger.info(f"Project generation failed or was cancelled for {comp_id}, exiting compilation")
-            return  # Exit immediately, status already updated in generator function
+            return
+
+        # Store project_dir so export endpoint can find figures/context JSON
+        with compilation_lock:
+            compilation_status[comp_id]['project_dir'] = str(project_folder)
 
         # Check if compilation was cancelled after project generation
         with compilation_lock:
@@ -979,11 +1070,11 @@ def run_compilation(comp_id: str, request_data: ReportRequest):
                 return
 
         # Create temporary directory for outputs
-        temp_dir = Path(tempfile.mkdtemp(prefix="latex_output_"))
+        temp_dir = Path(tempfile.mkdtemp(prefix="html_output_"))
 
-        # Compile the LaTeX project
-        logger.info(f"Compiling LaTeX project in {project_folder} for {comp_id}")
-        pdf_paths = compile_latex_with_progress(project_folder, comp_id)
+        # Render HTML → PDF via WeasyPrint
+        logger.info(f"Rendering HTML report for {comp_id} in {project_folder}")
+        pdf_paths = render_html_to_pdf(project_folder, temp_dir, comp_id)
 
         # Check for cancellation before creating ZIP
         with compilation_lock:
@@ -1047,7 +1138,7 @@ def run_compilation(comp_id: str, request_data: ReportRequest):
                         'current_step': 'Compilation completed successfully!',
                         'status': 'completed',
                         'result': {
-                            'message': f'LaTeX report generated successfully for {request_data.entity_acronym} '
+                            'message': f'Report generated successfully for {request_data.entity_acronym} '
                                        f'({request_data.year})',
                             'pdf_url': '/download-pdf',
                             'zip_url': '/download-zip',
@@ -1136,6 +1227,195 @@ async def run_compilation_async(comp_id: str, request_data: ReportRequest):
     await loop.run_in_executor(thread_pool, run_compilation, comp_id, request_data)
 
 
+# ── Analyses & export endpoints ─────────────────────────────────────────────
+
+class AnalysisUpdate(BaseModel):
+    content: str
+
+
+def _get_comp_project_dir(comp_id: str, current_user: dict) -> Path:
+    """Shared ownership check + return project_dir path."""
+    with compilation_lock:
+        status = compilation_status.get(comp_id)
+    if not status:
+        raise HTTPException(status_code=404, detail="Compilation not found")
+    if status.get('user_id') != current_user['id']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    project_dir = status.get('project_dir')
+    if not project_dir or not Path(project_dir).exists():
+        raise HTTPException(status_code=404, detail="Project files not available")
+    return Path(project_dir)
+
+
+@app.get("/report-sections/{comp_id}")
+async def get_report_sections(
+    comp_id: str,
+    current_user: Annotated[dict, Depends(get_current_active_user)]
+):
+    """Return the list of editable sections for a completed report."""
+    project_dir = _get_comp_project_dir(comp_id, current_user)
+    figures_json = project_dir / "figures.json"
+    context_json = project_dir / "context.json"
+    if not figures_json.exists() or not context_json.exists():
+        raise HTTPException(status_code=404, detail="Report data not available yet")
+
+    import json
+    with open(figures_json, encoding="utf-8") as f:
+        generated_figures: set = set(json.load(f).keys())
+    with open(context_json, encoding="utf-8") as f:
+        context = json.load(f)
+    report_type = context.get("report_type", "biso")
+    all_sections = REPORT_SECTIONS.get(report_type, REPORT_SECTIONS["biso"])
+
+    result = []
+    for sec in all_sections:
+        has_figure = sec.get("figure", True)
+        if not has_figure or sec["id"] in generated_figures:
+            result.append({"id": sec["id"], "label": sec["label"], "has_figure": has_figure and sec["id"] in generated_figures})
+    return result
+
+
+@app.get("/analyses/{comp_id}")
+async def get_analyses_endpoint(
+    comp_id: str,
+    current_user: Annotated[dict, Depends(get_current_active_user)]
+):
+    """Return all saved analyses for a report as {section_id: markdown_content}."""
+    with compilation_lock:
+        status = compilation_status.get(comp_id)
+    if not status:
+        raise HTTPException(status_code=404, detail="Compilation not found")
+    if status.get('user_id') != current_user['id']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    return get_analyses(comp_id, current_user['id'])
+
+
+@app.put("/analyses/{comp_id}/{section_id}")
+async def save_analysis_endpoint(
+    comp_id: str,
+    section_id: str,
+    body: AnalysisUpdate,
+    current_user: Annotated[dict, Depends(get_current_active_user)]
+):
+    """Upsert a single section analysis (auto-save target)."""
+    with compilation_lock:
+        status = compilation_status.get(comp_id)
+    if not status:
+        raise HTTPException(status_code=404, detail="Compilation not found")
+    if status.get('user_id') != current_user['id']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    upsert_analysis(comp_id, current_user['id'], section_id, body.content)
+    return {"message": "saved"}
+
+
+@app.get("/figures/{comp_id}/{figure_name}")
+async def get_figure_svg(
+    comp_id: str,
+    figure_name: str,
+    current_user: Annotated[dict, Depends(get_current_active_user)]
+):
+    """Serve an SVG figure file for preview in the editor."""
+    project_dir = _get_comp_project_dir(comp_id, current_user)
+    svg_path = project_dir / "figures" / f"{figure_name}.svg"
+    if not svg_path.exists():
+        raise HTTPException(status_code=404, detail="Figure not found")
+    return FileResponse(str(svg_path), media_type="image/svg+xml")
+
+
+@app.post("/export/{comp_id}")
+async def export_report(
+    comp_id: str,
+    current_user: Annotated[dict, Depends(get_current_active_user)]
+):
+    """Re-render report with current analyses and produce PDF via WeasyPrint."""
+    project_dir = _get_comp_project_dir(comp_id, current_user)
+
+    with compilation_lock:
+        status = compilation_status.get(comp_id)
+        temp_dir_str = status.get('temp_dir')
+        status['export_status'] = 'rendering'
+        status['last_updated'] = datetime.now()
+
+    temp_dir = Path(temp_dir_str) if temp_dir_str else Path(tempfile.mkdtemp(prefix="html_output_"))
+
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(
+        thread_pool,
+        _do_export, comp_id, current_user['id'], project_dir, temp_dir
+    )
+    return {"message": "Export started", "comp_id": comp_id}
+
+
+def _do_export(comp_id: str, user_id: int, project_dir: Path, output_dir: Path):
+    """Background export task: render Jinja2 + WeasyPrint."""
+    import markdown as md_lib
+    from dibisoreporting import DibisoReporting
+
+    try:
+        raw_analyses = get_analyses(comp_id, user_id)
+        analyses_html = {k: md_lib.markdown(v) for k, v in raw_analyses.items() if v}
+        DibisoReporting.render_from_saved(str(project_dir), analyses_html)
+    except Exception as e:
+        logger.error(f"Render failed for export {comp_id}: {e}")
+        with compilation_lock:
+            if comp_id in compilation_status:
+                compilation_status[comp_id]['export_status'] = 'failed'
+                compilation_status[comp_id]['last_updated'] = datetime.now()
+        return
+
+    from weasyprint import HTML as WeasyprintHTML
+    pdf_urls = {}
+    for name in ("report", "biblio"):
+        html_path = project_dir / f"{name}.html"
+        if not html_path.exists():
+            continue
+        try:
+            pdf_path = output_dir / f"{name}.pdf"
+            WeasyprintHTML(filename=str(html_path)).write_pdf(str(pdf_path), presentational_hints=True)
+            shutil.copy2(str(html_path), str(output_dir / f"{name}.html"))
+            pdf_urls[name] = f"/download-pdf?temp_id={comp_id}&file_name={name}"
+        except Exception as e:
+            logger.error(f"WeasyPrint failed for {name} in export {comp_id}: {e}")
+
+    with compilation_lock:
+        if comp_id in compilation_status:
+            compilation_status[comp_id].update({
+                'export_status': 'done',
+                'export_pdf_url': pdf_urls.get('report'),
+                'export_html_url': f"/download-html?temp_id={comp_id}&file_name=report",
+                'temp_dir': str(output_dir),
+                'last_updated': datetime.now(),
+            })
+
+
+@app.get("/download-html")
+async def download_html(
+    temp_id: str,
+    file_name: str,
+    current_user: Annotated[dict, Depends(get_current_active_user)]
+):
+    """Download the generated HTML report file."""
+    with compilation_lock:
+        status = compilation_status.get(temp_id)
+    if not status:
+        raise HTTPException(status_code=404, detail="Compilation not found")
+    if status.get('user_id') != current_user['id']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    temp_dir = status.get('temp_dir')
+    if not temp_dir:
+        raise HTTPException(status_code=404, detail="Output directory not available")
+    html_path = Path(temp_dir) / f"{file_name}.html"
+    if not html_path.exists():
+        raise HTTPException(status_code=404, detail="HTML file not found")
+    return FileResponse(
+        path=str(html_path),
+        filename=f"{file_name}.html",
+        media_type="text/html"
+    )
+
+
+# ────────────────────────────────────────────────────────────────────────────
+
 @app.post("/generate-report")
 async def generate_report_endpoint(
     request: ReportRequest,
@@ -1203,7 +1483,11 @@ async def get_compilation_status(
     status_copy.pop('created_at', None)
     status_copy.pop('last_updated', None)
     status_copy.pop('request_data', None)
-    status_copy.pop('user_id', None)  # Remove user_id from response
+    status_copy.pop('user_id', None)
+    status_copy.pop('project_dir', None)
+
+    # Expose export progress fields
+    # export_status and export_pdf_url are kept if present
 
     return status_copy
 

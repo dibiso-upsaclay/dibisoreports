@@ -9,3 +9,5 @@ pydantic[email]
 python-multipart
 starlette
 requests
+markdown>=3.5
+weasyprint>=62

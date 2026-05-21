@@ -53,6 +53,18 @@ def init_database():
         )
     ''')
 
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS report_analyses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            comp_id TEXT NOT NULL,
+            user_id INTEGER NOT NULL,
+            section_id TEXT NOT NULL,
+            content TEXT DEFAULT '',
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(comp_id, section_id)
+        )
+    ''')
+
     conn.commit()
     conn.close()
 
@@ -309,3 +321,54 @@ def delete_user_by_id(user_id: int):
 def is_admin(user: Dict) -> bool:
     """Check if user has admin role"""
     return user.get("role") == "admin"
+
+
+# ── Report analyses CRUD ────────────────────────────────────────────────
+
+def get_analyses(comp_id: str, user_id: int) -> Dict[str, str]:
+    """Return {section_id: content} for a given comp_id owned by user_id."""
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT section_id, content FROM report_analyses WHERE comp_id = ? AND user_id = ?",
+        (comp_id, user_id)
+    )
+    rows = cursor.fetchall()
+    conn.close()
+    return {row["section_id"]: row["content"] for row in rows}
+
+
+def upsert_analysis(comp_id: str, user_id: int, section_id: str, content: str) -> None:
+    """Insert or replace a single section analysis."""
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    cursor.execute(
+        """INSERT OR REPLACE INTO report_analyses
+           (comp_id, user_id, section_id, content, updated_at)
+           VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)""",
+        (comp_id, user_id, section_id, content)
+    )
+    conn.commit()
+    conn.close()
+
+
+def delete_analyses(comp_id: str) -> None:
+    """Delete all analyses for a comp_id (called during compilation cleanup)."""
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM report_analyses WHERE comp_id = ?", (comp_id,))
+    conn.commit()
+    conn.close()
+
+
+def delete_old_analyses(retention_days: int) -> None:
+    """Delete analyses older than retention_days (background cleanup)."""
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    cursor.execute(
+        "DELETE FROM report_analyses WHERE updated_at < datetime('now', ?)",
+        (f"-{retention_days} days",)
+    )
+    conn.commit()
+    conn.close()
