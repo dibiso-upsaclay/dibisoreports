@@ -6,7 +6,9 @@ import plotly.graph_objects as go
 import plotly.express as px
 
 from dibisoplot.translation import get_translator
-from dibisoplot.utils import get_empty_plot_with_message, get_empty_latex_with_message, get_bar_width
+import html as html_lib
+
+from dibisoplot.utils import get_empty_plot_with_message, get_bar_width
 
 
 class DataStatus(Enum):
@@ -34,6 +36,7 @@ class Dibisoplot:
     # TODO: change default orientation value to 'h'
     orientation = 'v'
     figure_file_extension = "pdf"
+    html_figure_type = "plotly"  # "plotly" | "html_table" | "html_list"
 
     default_dynamic_bar_width = 0.7
     default_height = 600
@@ -146,63 +149,53 @@ class Dibisoplot:
             hide_n_entities_warning: bool = False
     ):
         """
-        Generate the plot info.
-        This information is used to print a warning on the report.
-
-        :param hide_max_entities_reached_warning: If True, the warning about the maximum number of entities processed
-            is not displayed.
-        :type hide_max_entities_reached_warning: bool, optional
-        :param hide_n_entities_warning: If True, the warning about the number of entities found is not displayed.
-        :type hide_n_entities_warning: bool, optional
+        Generate the plot info string (plain text / HTML).
+        Used to display warnings in the HTML report.
         """
+        parts = []
         if self.max_entities_reached and not hide_max_entities_reached_warning:
-            self.info += r"\emoji{warning} "
-            self.info += self._("The data processing was limited by the maximum number of downloadable entities (")
-            self.info += str(self.max_entities)
-            self.info += self._("). Data can be missing or values can be lower than the real values. ")
-            self.info += r"\\"
+            parts.append(
+                "⚠️ " +
+                self._("The data processing was limited by the maximum number of downloadable entities (") +
+                str(self.max_entities) +
+                self._("). Data can be missing or values can be lower than the real values.")
+            )
         if (self.n_entities_found is not None and self.n_entities_found > self.max_plotted_entities and
                 not hide_n_entities_warning):
-            if self.__class__.__name__ == "AnrProjects" or self.__class__.__name__ == "EuropeanProjects":
-                self.info += self._(f"The number of displayed projects was limited to ")
-            elif self.__class__.__name__ == "Chapters":
-                self.info += self._(f"The number of displayed chapters was limited to ")
-            elif (self.__class__.__name__ == "CollaborationNames" or
-                    self.__class__.__name__ == "PrivateSectorCollaborations"):
-                self.info += self._(f"The number of displayed collaborations was limited to ")
-            elif self.__class__.__name__ == "Conferences":
-                self.info += self._(f"The number of displayed conferences was limited to ")
-            elif self.__class__.__name__ == "Journals" or self.__class__.__name__ == "JournalsHal":
-                self.info += self._(f"The number of displayed journals was limited to ")
-            elif self.__class__.__name__ == "WorksBibtex":
-                self.info += self._(f"The number of displayed works was limited to ")
-            elif self.__class__.__name__ == "WorksType":
-                self.info += self._(f"The number of displayed work types was limited to ")
+            cls = self.__class__.__name__
+            if cls in ("AnrProjects", "EuropeanProjects"):
+                prefix = self._("The number of displayed projects was limited to ")
+                suffix = self._(f" projects were found.")
+            elif cls == "Chapters":
+                prefix = self._("The number of displayed chapters was limited to ")
+                suffix = self._(" chapters were found.")
+            elif cls in ("CollaborationNames", "PrivateSectorCollaborations"):
+                prefix = self._("The number of displayed collaborations was limited to ")
+                suffix = self._(" collaborations were found.")
+            elif cls == "Conferences":
+                prefix = self._("The number of displayed conferences was limited to ")
+                suffix = self._(" conferences were found.")
+            elif cls in ("Journals", "JournalsHal"):
+                prefix = self._("The number of displayed journals was limited to ")
+                suffix = self._(" journals were found.")
+            elif cls == "WorksBibtex":
+                prefix = self._("The number of displayed works was limited to ")
+                suffix = self._(" works were found.")
+            elif cls == "WorksType":
+                prefix = self._("The number of displayed work types was limited to ")
+                suffix = self._(" work types were found.")
             else:
-                self.info += self._(f"The number of displayed entities was limited to ")
-            self.info += str(self.max_plotted_entities)
-            self.info += self._(". In the API, ")
-            self.info += str(self.n_entities_found)
-            if self.__class__.__name__ == "AnrProjects" or self.__class__.__name__ == "EuropeanProjects":
-                self.info += self._(f" projects were found.")
-            elif self.__class__.__name__ == "Chapters":
-                self.info += self._(f" chapters were found.")
-            elif (self.__class__.__name__ == "CollaborationNames" or
-                    self.__class__.__name__ == "PrivateSectorCollaborations"):
-                self.info += self._(f" collaborations were found.")
-            elif self.__class__.__name__ == "Conferences":
-                self.info += self._(f" conferences were found.")
-            elif self.__class__.__name__ == "Journals" or self.__class__.__name__ == "JournalsHal":
-                self.info += self._(f" journals were found.")
-            elif self.__class__.__name__ == "WorksType":
-                self.info += self._(f" work types were found.")
-            else:
-                self.info += self._(" entities were found.")
-            self.info += r"\\"
+                prefix = self._("The number of displayed entities was limited to ")
+                suffix = self._(" entities were found.")
+            parts.append(
+                prefix + str(self.max_plotted_entities) +
+                self._(". In the API, ") + str(self.n_entities_found) + suffix
+            )
+        self.info = " ".join(parts)
 
 
     def get_no_data_plot(self) -> go.Figure:
-        """Create the error plot."""
+        """Create the no-data plot."""
         return get_empty_plot_with_message(self._("No data"))
 
 
@@ -211,14 +204,92 @@ class Dibisoplot:
         return get_empty_plot_with_message(self._("Error while making the plot"))
 
 
-    def get_no_data_latex(self) -> str:
-        """Create the error LaTeX code."""
-        return get_empty_latex_with_message(self._("No data"))
+    def get_no_data_html(self) -> str:
+        """Create the no-data HTML fragment."""
+        return f'<div class="dibiso-no-data">{html_lib.escape(self._("No data"))}</div>'
 
 
-    def get_error_latex(self) -> str:
-        """Create the error LaTeX code."""
-        return get_empty_latex_with_message(self._("Error while making the table"))
+    def get_error_html(self) -> str:
+        """Create the error HTML fragment."""
+        return f'<div class="dibiso-error">{html_lib.escape(self._("Error while making the table"))}</div>'
+
+
+    def figure_to_svg(self, fig: go.Figure) -> str:
+        """Export a Plotly figure as an SVG string (for WeasyPrint PDF path)."""
+        return fig.to_image(format="svg").decode("utf-8")
+
+
+    def figure_to_html_fragment(self, fig: go.Figure) -> str:
+        """Export a Plotly figure as an embeddable HTML div (no full page, no Plotly JS bundle)."""
+        return fig.to_html(full_html=False, include_plotlyjs=False)
+
+
+    def dataframe_to_html_table(
+            self,
+            table_df,
+            caption: str | None = None,
+            label: str | None = None,
+            max_plotted_entities: int | None = None,
+    ) -> str:
+        """
+        Convert a pandas DataFrame to an HTML table fragment wrapped in a <figure>.
+
+        :param table_df: pandas DataFrame to convert.
+        :param caption: Optional caption rendered as <figcaption>.
+        :param label: Optional id attribute on the <figure> element.
+        :param max_plotted_entities: If set, truncate to this many rows with a notice.
+        :return: HTML string.
+        """
+        if table_df.empty:
+            return f'<p class="dibiso-no-data">{html_lib.escape(self._("No data"))}</p>'
+
+        rows = []
+        truncated = False
+        total_rows = len(table_df)
+
+        for i, (_, row) in enumerate(table_df.iterrows()):
+            if max_plotted_entities is not None and i >= max_plotted_entities:
+                if not (self.n_entities_found is not None and total_rows < self.n_entities_found):
+                    truncated = True
+                    truncated_at = i
+                    truncated_total = total_rows
+                break
+            cells = "".join(
+                f"<td>{html_lib.escape(str(v)) if not pd.isna(v) else ''}</td>"
+                for v in row
+            )
+            rows.append(f"<tr>{cells}</tr>")
+
+        if self.n_entities_found is not None and total_rows < self.n_entities_found:
+            truncated = True
+            truncated_at = total_rows
+            truncated_total = self.n_entities_found
+
+        headers = "".join(
+            f"<th>{html_lib.escape(str(c))}</th>" for c in table_df.columns
+        )
+        tbody_rows = "\n".join(rows)
+
+        notice = ""
+        if truncated:
+            notice = (
+                f'<p class="dibiso-truncation-notice">'
+                f'{html_lib.escape(self._("Only"))} {truncated_at} '
+                f'{html_lib.escape(self._("displayed lines out of"))} {truncated_total}.'
+                f'</p>'
+            )
+
+        id_attr = f' id="{html_lib.escape(label)}"' if label else ""
+        caption_html = f"<figcaption>{html_lib.escape(caption)}</figcaption>" if caption else ""
+
+        return (
+            f'<figure class="dibiso-table"{id_attr}>'
+            f"{caption_html}"
+            f'<table><thead><tr>{headers}</tr></thead>'
+            f'<tbody>{tbody_rows}</tbody></table>'
+            f"{notice}"
+            f'</figure>'
+        )
 
 
     def dataframe_to_longtable(
@@ -388,6 +459,7 @@ class Dibisoplot:
             return self.get_no_data_plot()
         if self.data_status == DataStatus.ERROR:
             return self.get_error_plot()
+        # NOTE: subclasses with html_figure_type "html_table"/"html_list" override this method entirely
 
         # TODO: move sorting from fetch_data to here
         # keep only the first max_plotted_entities items in the dictionary

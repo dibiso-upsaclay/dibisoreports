@@ -16,7 +16,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 import requests
 from elasticsearch import Elasticsearch
-from pylatexenc.latexencode import unicode_to_latex
 
 from dibisoplot.utils import get_hal_doc_type_name, format_structure_name
 from dibisoplot.dibisoplot import DataStatus, Dibisoplot
@@ -433,11 +432,10 @@ class AnrProjects(Biso):
 class Chapters(Biso):
     """
     A class to fetch and generate a table of book chapters.
-
-    :cvar figure_file_extension: The file extension for the figures ("tex" for LaTeX file).
     """
 
     figure_file_extension = "tex"
+    html_figure_type = "html_table"
 
 
     def __init__(self, entity_id: str, year: int | None = None, **kwargs):
@@ -510,28 +508,24 @@ class Chapters(Biso):
 
     def get_figure(self) -> str:
         """
-        Generate a LaTeX longtable of book chapters.
+        Generate an HTML table of book chapters.
 
-        :return: LaTeX code for the longtable representing the book chapters data.
+        :return: HTML fragment representing the book chapters data.
         :rtype: str
         """
         if self.data_status == DataStatus.NOT_FETCHED:
             self.fetch_data()
         if self.data_status == DataStatus.NO_DATA:
-            return self.get_no_data_latex()
+            return self.get_no_data_html()
         if self.data_status == DataStatus.ERROR:
-            return self.get_error_latex()
+            return self.get_error_html()
 
-        latex_table = self.dataframe_to_longtable(
+        return self.dataframe_to_html_table(
             self.data,
-            alignments=['p{.4\\linewidth}','p{.35\\linewidth}','p{.15\\linewidth}'],
             caption=self._("List of chapters entered in HAL"),
-            label='tab_chapters',
-            vertical_lines=False,
+            label="chapters",
             max_plotted_entities=self.max_plotted_entities,
         )
-
-        return latex_table
 
 
 class CollaborationMap(Biso):
@@ -1156,11 +1150,10 @@ class EuropeanProjects(Biso):
 class Journals(Biso):
     """
     A class to fetch and generate a table of journals.
-
-    :cvar figure_file_extension: The file extension for the figures ("tex" for LaTeX file).
     """
 
     figure_file_extension = "tex"
+    html_figure_type = "html_table"
 
     def __init__(self, entity_id: str, year: int | None = None, **kwargs):
         """
@@ -1211,11 +1204,11 @@ class Journals(Biso):
 
         def get_oa_status_latex_emoji(status) -> str:
             if pd.isna(status):
-                return "\\emoji{white-question-mark}"
+                return "❓"
             elif status:
-                return "\\emoji{check-mark-button}"
+                return "✅"
             else:
-                return "\\emoji{cross-mark}"
+                return "❌"
 
         try:
             if self.scanr_api_url is None:
@@ -1393,20 +1386,19 @@ class Journals(Biso):
 
     def get_figure(self) -> str:
         """
-        Generate a LaTeX longtable of journals.
+        Generate an HTML table of journals.
 
-        :return: LaTeX code for the longtable representing the journals data.
+        :return: HTML fragment representing the journals data.
         :rtype: str
         """
         if self.data_status == DataStatus.NOT_FETCHED:
             self.fetch_data()
         if self.data_status == DataStatus.NO_DATA:
-            return self.get_no_data_latex()
+            return self.get_no_data_html()
         if self.data_status == DataStatus.ERROR:
-            return self.get_error_latex()
+            return self.get_error_html()
 
         df = self.data.copy(deep=True)
-
         df = df.rename(columns={
             "journal_name": self._("Journal"),
             "publisher": self._("Publisher"),
@@ -1416,17 +1408,15 @@ class Journals(Biso):
             "paid_apc": self._("Paid APC"),
         })
 
-        latex_table = self.dataframe_to_longtable(
+        return self.dataframe_to_html_table(
             df,
-            alignments=['p{.27\\linewidth}','P{.18\\linewidth}','P{.07\\linewidth}','P{.12\\linewidth}','P{.12\\linewidth}','P{.07\\linewidth}'],
-            caption=self._("List of journals, publishers, open access status and paid APC") + ". " +
-                    self._("From the list of publications in HAL and the data of the BSO") + " " + self.scanr_bso_version + ".",
-            label='tab_journals',
-            vertical_lines=False,
+            caption=(
+                self._("List of journals, publishers, open access status and paid APC") + ". " +
+                self._("From the list of publications in HAL and the data of the BSO") + " " + self.scanr_bso_version + "."
+            ),
+            label="journals",
             max_plotted_entities=self.max_plotted_entities,
         )
-
-        return latex_table
 
 
 class JournalsHal(Biso):
@@ -1802,12 +1792,11 @@ class PrivateSectorCollaborations(Biso):
 
 class WorksBibtex(Biso):
     """
-    A class to fetch the works of a HAL collection and create the bibtex string.
-
-    :cvar figure_file_extension: The file extension for the figures ("bib" for LaTeX bibtex file).
+    A class to fetch the works of a HAL collection and render them as an HTML bibliography list.
     """
 
     figure_file_extension = "bib"
+    html_figure_type = "html_list"
 
     def fetch_data(self) -> dict[str, Any]:
         """
@@ -1855,16 +1844,16 @@ class WorksBibtex(Biso):
                 else:
                     entry_type = "misc"
                 ref = {
-                    "TITLE": unicode_to_latex(rep_cyr(str(titles[0] if len(titles) > 0 else ""))),
-                    "AUTHOR": unicode_to_latex(rep_cyr(" and ".join(authors))),
+                    "TITLE": str(titles[0] if len(titles) > 0 else ""),
+                    "AUTHOR": " and ".join(authors),
                     "URL": str(work.get("uri_s", "")),
-                    "JOURNAL": unicode_to_latex(rep_cyr(str(work.get("journalTitle_s", "")))),
-                    "PUBLISHER": unicode_to_latex(rep_cyr(str(work.get("journalPublisher_s", "")))),
-                    "VOLUME": unicode_to_latex(rep_cyr(str(work.get("volume_s", "")))),
-                    "PAGES": unicode_to_latex(rep_cyr(str(work.get("page_s", "")))),
-                    "YEAR": unicode_to_latex(rep_cyr(str(work.get("publicationDateY_i", "")))),
-                    "DOI": unicode_to_latex(rep_cyr(str(work.get("doiId_s", "")))),
-                    "HAL_ID": unicode_to_latex(rep_cyr(str(work.get("halId_s", "")))),
+                    "JOURNAL": str(work.get("journalTitle_s", "")),
+                    "PUBLISHER": str(work.get("journalPublisher_s", "")),
+                    "VOLUME": str(work.get("volume_s", "")),
+                    "PAGES": str(work.get("page_s", "")),
+                    "YEAR": str(work.get("publicationDateY_i", "")),
+                    "DOI": str(work.get("doiId_s", "")),
+                    "HAL_ID": str(work.get("halId_s", "")),
                     "bibtex_entry_type": entry_type
                 }
                 self.data[work['halId_s']] = ref
@@ -1884,25 +1873,33 @@ class WorksBibtex(Biso):
 
     def get_figure(self) -> str:
         """
-        Generate a LaTeX bibtex file.
+        Generate an HTML bibliography list.
 
-        :return: LaTeX bibtex string with all the references of the HAL collection.
+        :return: HTML <ol> with one <li> per work.
         :rtype: str
         """
+        import html as html_lib
         if self.data_status == DataStatus.NOT_FETCHED:
             self.fetch_data()
         if self.data_status == DataStatus.NO_DATA:
-            return "% " + self._(self._("No data"))
+            return f'<p class="dibiso-no-data">{html_lib.escape(self._("No data"))}</p>'
         if self.data_status == DataStatus.ERROR:
-            return "% " + self._(self._("Error while making the bibliography"))
-        bibtex = ""
+            return f'<p class="dibiso-error">{html_lib.escape(self._("Error while making the bibliography"))}</p>'
+
+        items = []
         for work in self.data.values():
-            bibtex += "@" + work['bibtex_entry_type'] + "{" + work['HAL_ID'] + ",\n"
-            for k,v in work.items():
-                if k != "bibtex_entry_type":
-                    bibtex += "  " + k + " = {" + v + "},\n"
-            bibtex += "}" + "\n\n"
-        return bibtex
+            authors = html_lib.escape(work.get("AUTHOR", ""))
+            title = html_lib.escape(work.get("TITLE", ""))
+            journal = html_lib.escape(work.get("JOURNAL", ""))
+            year = html_lib.escape(work.get("YEAR", ""))
+            url = html_lib.escape(work.get("URL", ""))
+            doi = html_lib.escape(work.get("DOI", ""))
+            doi_part = f' DOI: <a href="https://doi.org/{doi}">{doi}</a>' if doi else ""
+            url_part = f' <a href="{url}">[HAL]</a>' if url else ""
+            items.append(
+                f"<li>{authors}. <em>{title}</em>. {journal} ({year}).{doi_part}{url_part}</li>"
+            )
+        return f'<ol class="dibiso-bibliography">{"".join(items)}</ol>'
 
 
 class WorksType(Biso):
