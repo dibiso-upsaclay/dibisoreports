@@ -39,9 +39,11 @@ scanr_publications_index = os.getenv("SCANR_PUBLICATIONS_INDEX")
 projects_persistence_time_hours = int(os.getenv("PROJECTS_PERSISTENCE_TIME_HOURS"))
 analyses_retention_days = int(os.getenv("PROJECTS_ANALYSES_RETENTION_DAYS", "30"))
 html_template_url = os.getenv("HTML_TEMPLATE_URL")
+html_template_path = os.getenv("HTML_TEMPLATE_PATH")
 openalex_analysis_cache_path = os.getenv("OPENALEX_ANALYSIS_CACHE_PATH")
 openalex_api_key = os.getenv("OPENALEX_API_KEY")
 openalex_email = os.getenv("OPENALEX_EMAIL")
+data_fetching_timeout_seconds = int(os.getenv("DATA_FETCHING_TIMEOUT_SECONDS", "1200"))
 
 # Authentication Imports
 from fastapi.security import OAuth2PasswordRequestForm
@@ -113,6 +115,7 @@ compilation_lock = threading.Lock()
 
 # Add these new global variables for process management
 data_fetching_processes: Dict[str, subprocess.Popen] = {}
+latex_compilation_processes: Dict[str, subprocess.Popen] = {}
 process_lock = threading.Lock()
 
 # Section registry per report type
@@ -740,7 +743,19 @@ def render_html_to_pdf(project_dir: Path, output_dir: Path, comp_id: str) -> lis
         update_compilation_status(comp_id, 0, f"Report rendering failed: {e}", "failed")
         return [None, None]
 
-    from weasyprint import HTML as WeasyprintHTML
+    try:
+        from weasyprint import HTML as WeasyprintHTML
+    except OSError as e:
+        logger.warning(f"WeasyPrint unavailable (missing system library: {e}). "
+                       "HTML files will be available but no PDF will be generated. "
+                       "Install the GTK3 runtime (see README_RUN.md) to enable PDF export.")
+        # Copy HTML files to output dir so they can still be downloaded via ZIP
+        for name in ("report", "biblio"):
+            html_path = project_dir / f"{name}.html"
+            if html_path.exists():
+                shutil.copy2(str(html_path), str(output_dir / f"{name}.html"))
+        return [None, None]
+
     results = []
     for name, progress in [("report", 80), ("biblio", 88)]:
         html_path = project_dir / f"{name}.html"
@@ -869,37 +884,54 @@ def your_latex_project_generator(comp_id: str, request_data: ReportRequest) -> O
         logger.info(f"  Max entities: {request_data.max_entities}")
 
         # Start the data fetching + report generation as a subprocess with dynamic parameters
+        import json as _json
+        _cwd = _json.dumps(os.getcwd())
+        _cache = _json.dumps(str(openalex_analysis_cache_path))
+        _key = _json.dumps(str(openalex_api_key))
+        _email = _json.dumps(str(openalex_email))
+        _project_dir = _json.dumps(str(project_dir))
+        _html_tpl = _json.dumps(str(html_template_url))
+        _html_path = _json.dumps(str(html_template_path))
+        _scanr_pwd = _json.dumps(str(scanr_api_password))
+        _scanr_url = _json.dumps(str(scanr_api_url))
+        _scanr_user = _json.dumps(str(scanr_api_username))
+        _scanr_bso = _json.dumps(str(scanr_bso_index))
+        _scanr_pub = _json.dumps(str(scanr_publications_index))
+        _acronym = _json.dumps(request_data.entity_acronym)
+        _fullname = _json.dumps(request_data.entity_full_name)
+        _entity_id = _json.dumps(request_data.entity_id)
         process = subprocess.Popen([
             sys.executable, '-c',
             f'''
 import sys
-sys.path.insert(0, "{os.getcwd()}")
+sys.path.insert(0, {_cwd})
 
 from openalex_analysis.data import config as openalex_analysis_config
 from dibisoreporting import Biso
 
-if "{str(openalex_analysis_cache_path)}" != None:
-    openalex_analysis_config.project_data_folder_path = "{str(openalex_analysis_cache_path)}"
-if "{str(openalex_api_key)}" != None:
-    openalex_analysis_config.api_key = "{str(openalex_api_key)}"
-if "{str(openalex_email)}" != None:
-    openalex_analysis_config.email = "{str(openalex_email)}"
+if {_cache} != "None":
+    openalex_analysis_config.project_data_folder_path = {_cache}
+if {_key} != "None":
+    openalex_analysis_config.api_key = {_key}
+if {_email} != "None":
+    openalex_analysis_config.email = {_email}
 
 
 biso_reporting = Biso(
-    "{request_data.entity_id}",
+    {_entity_id},
     {request_data.year},
-    entity_acronym="{request_data.entity_acronym}",
-    entity_full_name="{request_data.entity_full_name}",
-    html_template_url="{html_template_url}",
+    entity_acronym={_acronym},
+    entity_full_name={_fullname},
+    html_template_path={_html_path} if {_html_path} != "None" else None,
+    html_template_url={_html_tpl} if {_html_path} == "None" else None,
     max_entities={request_data.max_entities},
-    root_path="{project_dir}",
+    root_path={_project_dir},
     watermark_text="",
-    scanr_api_password="{scanr_api_password}",
-    scanr_api_url="{scanr_api_url}",
-    scanr_api_username="{scanr_api_username}",
-    scanr_bso_index="{scanr_bso_index}",
-    scanr_publications_index="{scanr_publications_index}",
+    scanr_api_password={_scanr_pwd},
+    scanr_api_url={_scanr_url},
+    scanr_api_username={_scanr_user},
+    scanr_bso_index={_scanr_bso},
+    scanr_publications_index={_scanr_pub},
 )
 biso_reporting.generate_report()
             '''
@@ -910,7 +942,7 @@ biso_reporting.generate_report()
 
         # Wait for completion with timeout and cancellation checks
         start_time = time.time()
-        timeout_seconds = 300  # 5 minutes
+        timeout_seconds = data_fetching_timeout_seconds
         while process.poll() is None:
             # Check for timeout
             if time.time() - start_time > timeout_seconds:
