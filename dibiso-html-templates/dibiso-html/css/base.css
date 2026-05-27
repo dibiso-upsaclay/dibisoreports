@@ -1,0 +1,564 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap');
+
+:root {
+  --primary: #004e7d;
+  --gradient-a: #0e87c9;
+  --gradient-b: #40b769;
+  --text: #1a1a1a;
+  --text-light: #555;
+  --border: #d0d0d0;
+  --laser-width: 15mm;
+  --page-margin: 30mm;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 11pt;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* ── Title page ─────────────────────────────────────── */
+header.title-page {
+  position: relative;
+  height: 297mm;
+  width: 210mm;
+  overflow: hidden;
+  page-break-after: always;
+  background: white;
+}
+
+header.title-page::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: var(--laser-width);
+  background: linear-gradient(to right, var(--gradient-a), var(--gradient-b));
+}
+
+.title-page-content {
+  padding: 20mm 20mm 20mm calc(var(--laser-width) + 10mm);
+}
+
+.title-page-logo {
+  max-height: 50px;
+  max-width: 150px;
+  margin-bottom: 40mm;
+}
+
+.title-page-label {
+  position: absolute;
+  top: 10mm;
+  right: 10mm;
+  max-height: 30mm;
+  max-width: 30mm;
+}
+
+.report-title {
+  font-size: 22pt;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1.2;
+  margin-bottom: 8mm;
+}
+
+.report-subtitle {
+  font-size: 11pt;
+  color: var(--text-light);
+  margin-bottom: 6mm;
+  max-width: 80mm;
+}
+
+.report-description {
+  font-size: 10pt;
+  color: var(--text-light);
+  max-width: 110mm;
+}
+
+/* Watermark */
+body.watermark::after {
+  content: attr(data-watermark);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  font-size: 8pt;
+  letter-spacing: 0.3em;
+  color: rgba(0,0,0,0.07);
+  pointer-events: none;
+  white-space: nowrap;
+  font-weight: 700;
+  z-index: 9999;
+  font-size: 60pt;
+}
+
+/* ── Main content ────────────────────────────────────── */
+main {
+}
+
+/* ── Table of contents ───────────────────────────────── */
+nav.toc {
+  page-break-after: always;
+}
+
+nav.toc h2 {
+  color: var(--primary);
+  font-size: 14pt;
+  margin-bottom: 6mm;
+}
+
+nav.toc ol {
+  list-style: none;
+  padding: 0;
+}
+
+nav.toc li {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dotted var(--border);
+  padding: 1mm 0;
+  font-size: 10pt;
+}
+
+/* ── Sections ────────────────────────────────────────── */
+section {
+  margin-bottom: 12mm;
+}
+
+h2 {
+  color: var(--primary);
+  font-size: 14pt;
+  font-weight: 700;
+  border-bottom: 2px solid var(--primary);
+  padding-bottom: 2mm;
+  margin-bottom: 6mm;
+  page-break-before: always;
+}
+
+main > section:first-child > h2 { page-break-before: avoid; }
+
+h3 {
+  color: var(--primary);
+  font-size: 11pt;
+  font-weight: 600;
+  margin: 4mm 0 2mm;
+}
+
+p { margin-bottom: 3mm; }
+
+/* ── Figures ─────────────────────────────────────────── */
+figure.dibiso-figure {
+  margin: 4mm 0;
+  text-align: center;
+}
+
+figure.dibiso-figure img,
+figure.dibiso-figure svg {
+  max-width: 100%;
+}
+
+figcaption {
+  font-size: 9pt;
+  color: var(--text-light);
+  margin-top: 2mm;
+  text-align: center;
+}
+
+/* ── Tables ──────────────────────────────────────────── */
+figure.dibiso-table {
+  margin: 4mm 0;
+  overflow-x: auto;
+}
+
+figure.dibiso-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9pt;
+}
+
+figure.dibiso-table thead th {
+  border-bottom: 2px solid var(--primary);
+  padding: 1.5mm 2mm;
+  text-align: left;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+figure.dibiso-table tbody td {
+  padding: 1mm 2mm;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+figure.dibiso-table figcaption {
+  text-align: left;
+  font-size: 9pt;
+  margin-bottom: 2mm;
+}
+
+p.dibiso-truncation-notice {
+  font-size: 8.5pt;
+  color: var(--text-light);
+  margin-top: 1mm;
+}
+
+/* ── Bibliography ────────────────────────────────────── */
+ol.dibiso-bibliography {
+  font-size: 9.5pt;
+  padding-left: 6mm;
+}
+
+ol.dibiso-bibliography li {
+  margin-bottom: 2mm;
+  line-height: 1.4;
+}
+
+/* ── Analysis blocks ─────────────────────────────────── */
+div.analysis {
+  background: #f8f8f8;
+  border-left: 3px solid var(--primary);
+  padding: 3mm 4mm;
+  margin: 3mm 0;
+  font-size: 10pt;
+}
+
+div.analysis p { margin-bottom: 2mm; }
+div.analysis p:last-child { margin-bottom: 0; }
+
+div.analysis ul, div.analysis ol {
+  padding-left: 5mm;
+  margin-bottom: 2mm;
+}
+
+/* ── Info / warning blocks ───────────────────────────── */
+p.dibiso-info {
+  font-size: 9pt;
+  color: var(--text-light);
+  font-style: italic;
+  margin-top: 2mm;
+}
+
+div.dibiso-no-data, div.dibiso-error {
+  padding: 3mm 4mm;
+  border: 1px solid var(--border);
+  border-radius: 2mm;
+  color: var(--text-light);
+  font-size: 10pt;
+}
+
+/* ── Section badges ──────────────────────────────────── */
+.section-badge {
+  display: inline-block;
+  font-size: 8pt;
+  font-weight: 600;
+  color: #00807a;
+  border: 1.5px solid #00807a;
+  border-radius: 4px;
+  padding: 1px 5px;
+  vertical-align: middle;
+  margin-left: 4px;
+  line-height: 1.4;
+  background: white;
+}
+
+/* ── Last page ───────────────────────────────────────── */
+footer.last-page {
+  position: relative;
+  height: 297mm;
+  padding: var(--page-margin);
+  page-break-before: always;
+}
+
+footer.last-page::before {
+  content: "";
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: var(--laser-width);
+  background: linear-gradient(to left, var(--gradient-a), var(--gradient-b));
+}
+
+.last-page-content {
+  padding-right: calc(var(--laser-width) + 5mm);
+  font-size: 9pt;
+}
+
+.last-page-section {
+  margin-bottom: 5mm;
+}
+
+.last-page-section h3 {
+  font-size: 10pt;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 2mm;
+}
+
+.last-page-section p,
+.last-page-section a {
+  font-size: 9pt;
+  color: var(--text-light);
+}
+
+.last-page-section strong { color: var(--text); }
+
+.sources-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1mm 4mm;
+  font-size: 9pt;
+}
+
+.sources-list dt { font-weight: 600; color: var(--text); }
+.sources-list dd { color: var(--text-light); }
+
+.last-page-note {
+  margin-top: 2mm;
+  font-size: 8.5pt;
+  color: var(--text-light);
+  font-style: italic;
+}
+
+/* ── Code/tools section ──────────────────────────────── */
+.tools-category {
+  margin: 2mm 0 1mm;
+}
+
+.tools-category strong { color: var(--text); font-size: 9pt; }
+
+.tools-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1mm 3mm;
+}
+
+.tools-list li {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 8.5pt;
+  color: var(--text-light);
+  margin-bottom: 0.5mm;
+}
+
+.tools-list li a { color: var(--text-light); }
+
+/* ── Inline icons ────────────────────────────────────── */
+.icon-inline {
+  height: 11px;
+  width: 11px;
+  flex-shrink: 0;
+  opacity: 0.7;
+  vertical-align: middle;
+  fill: currentColor;
+}
+
+/* ── ORCID ───────────────────────────────────────────── */
+.last-page-authors p {
+  font-size: 9pt;
+  color: var(--text-light);
+  margin-bottom: 1mm;
+}
+
+.orcid-link {
+  text-decoration: none;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 1px;
+}
+
+.icon-orcid {
+  height: 13px;
+  width: 13px;
+  vertical-align: middle;
+}
+
+/* ── Team footer ─────────────────────────────────────── */
+.last-page-team-footer {
+  margin-top: auto;
+  padding-right: calc(var(--laser-width) + 5mm);
+}
+
+.team-footer-rule {
+  height: 3px;
+  background: linear-gradient(to right, var(--gradient-a), var(--gradient-b));
+  border-radius: 2px;
+  margin-bottom: 3mm;
+}
+
+.team-footer-columns {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10mm;
+  margin-bottom: 3mm;
+}
+
+.team-footer-heading {
+  font-size: 11pt;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 1.5mm;
+}
+
+.team-footer-left p,
+.team-footer-right p {
+  font-size: 8.5pt;
+  color: var(--text-light);
+  margin-bottom: 1mm;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.team-footer-left a,
+.team-footer-right a {
+  color: var(--text-light);
+}
+
+.team-footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6mm;
+  padding-top: 2mm;
+}
+
+.dibiso-full-name {
+  font-size: 8pt;
+  color: var(--text-light);
+  margin: 0;
+  flex: 1;
+}
+
+/* ── License logos ───────────────────────────────────── */
+.license-logos {
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+  flex-shrink: 0;
+}
+
+.cc-by-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border: 1.5px solid #04a5d5;
+  border-radius: 3px;
+  color: #04a5d5;
+  font-size: 8pt;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.icon-license {
+  height: 22px;
+  width: auto;
+  vertical-align: middle;
+}
+
+.last-page-icons {
+  display: flex;
+  gap: 4mm;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 3mm;
+}
+
+.last-page-icons img,
+.last-page-icons svg {
+  height: 16px;
+  width: auto;
+  opacity: 0.7;
+}
+
+/* ── Inline SVG figures ──────────────────────────────── */
+.dibiso-svg-figure {
+  margin: 4mm 0;
+  text-align: center;
+}
+
+/* Strip fixed dimensions so CSS can size the SVG; viewBox preserves aspect ratio */
+.dibiso-svg-figure svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ── Print / WeasyPrint ──────────────────────────────── */
+@media print {
+  h2 { page-break-before: always; }
+  main > section:first-child > h2 { page-break-before: avoid; }
+  figure { page-break-inside: avoid; }
+  nav.toc { page-break-after: always; }
+}
+
+/* ── Screen: PDF-viewer layout ───────────────────────── */
+@media screen {
+  body {
+    background: #4b5563;
+    padding: 24px;
+    min-height: 100vh;
+    counter-reset: html-page;
+  }
+
+  /* Major structural elements appear as white A4 page cards */
+  header.title-page,
+  nav.toc,
+  footer.last-page {
+    max-width: 210mm;
+    margin: 0 auto 24px auto;
+    background: white;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.35);
+    border-radius: 2px;
+    overflow: hidden;
+    counter-increment: html-page;
+    position: relative;
+  }
+
+  nav.toc {
+    padding: var(--page-margin);
+  }
+
+  header.title-page {
+    width: 100%;
+  }
+
+  /* main: transparent container — sections inside are the individual page cards */
+  main {
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  /* Each content section is its own A4-like page card */
+  main > section {
+    background: white;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.35);
+    border-radius: 2px;
+    margin-bottom: 24px;
+    padding: var(--page-margin);
+    overflow: hidden;
+    position: relative;
+    counter-increment: html-page;
+  }
+
+  /* Page number indicator at the bottom-right of each card */
+  header.title-page::after,
+  nav.toc::after,
+  main > section::after,
+  footer.last-page::after {
+    content: counter(html-page);
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-size: 9pt;
+    color: rgba(0, 0, 0, 0.22);
+    font-family: 'Open Sans', sans-serif;
+    pointer-events: none;
+  }
+}

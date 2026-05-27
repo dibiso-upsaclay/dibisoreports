@@ -1,0 +1,17 @@
+{% extends "base.html.j2" %}
+
+{% block report_type_label %}Bibliographie{% endblock %}
+{% block report_title %}Bibliographie<br>{{ reportyear | default('') }}{% endblock %}
+{% block title_description %}Liste des publications de {{ labacronym | default('') }} déposées dans HAL.{% endblock %}
+{% block toc_entries %}{% endblock %}
+
+{% block main_content %}
+<section id="bibliography">
+  <h2>Publications {{ reportyear | default('') }}</h2>
+  {% if figures.works_bibtex is defined %}
+  {{ figures.works_bibtex | safe }}
+  {% else %}
+  <p class="dibiso-no-data">Aucune publication trouvée.</p>
+  {% endif %}
+</section>
+{% endblock %}

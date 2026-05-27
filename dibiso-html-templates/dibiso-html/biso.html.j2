@@ -1,0 +1,178 @@
+{% extends "base.html.j2" %}
+
+{% block report_type_label %}Bilan Science Ouverte{% endblock %}
+
+{% block report_title %}Bilan<br>Science<br>Ouverte{% endblock %}
+
+{% block title_description %}
+  Rapport annuel {{ reportyear | default('') }} — {{ labacronym | default('') }}
+{% endblock %}
+
+{% block title_label %}
+  <img class="title-page-label" src="assets/label-science-ouverte.svg" alt="Science Ouverte">
+{% endblock %}
+
+{% block toc_entries %}
+  {% if figures.works_type is defined %}<li><span>Typologie de la production scientifique</span></li>{% endif %}
+  {% if figures.journals_hal is defined %}<li><span>Liste des revues (HAL)</span></li>{% endif %}
+  {% if figures.journals is defined %}<li><span>Revues et voies d'accès</span></li>{% endif %}
+  {% if figures.conferences is defined %}<li><span>Liste des conférences</span></li>{% endif %}
+  {% if figures.chapters is defined %}<li><span>Liste des chapitres</span></li>{% endif %}
+  {% if figures.open_access_works is defined %}<li><span>Articles en accès ouvert</span></li>{% endif %}
+  {% if figures.collaboration_map_world is defined or figures.collaboration_map_europe is defined %}<li><span>Cartes des collaborations</span></li>{% endif %}
+  {% if figures.collaboration_names is defined %}<li><span>Collaborations par établissements</span></li>{% endif %}
+  {% if figures.private_sector_collaborations is defined %}<li><span>Collaborations secteur privé</span></li>{% endif %}
+  {% if figures.european_projects is defined %}<li><span>Projets européens</span></li>{% endif %}
+  {% if figures.anr_projects is defined %}<li><span>Projets ANR</span></li>{% endif %}
+  <li><span>Atouts du laboratoire</span></li>
+  <li><span>Préconisations</span></li>
+{% endblock %}
+
+{% block main_content %}
+
+{% if figures.works_type is defined %}
+<section id="works-type">
+  <h2>Typologie de la production scientifique</h2>
+  {{ figures.works_type | safe }}
+  {% if workstype_info is defined and workstype_info %}<p class="dibiso-info">{{ workstype_info }}</p>{% endif %}
+  {% if analyses.works_type is defined and analyses.works_type %}
+  <div class="analysis">{{ analyses.works_type | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if figures.journals_hal is defined %}
+<section id="journals-hal">
+  <h2>Liste des revues</h2>
+  {{ figures.journals_hal | safe }}
+  {% if journalshalinfo is defined and journalshalinfo %}<p class="dibiso-info">{{ journalshalinfo }}</p>{% endif %}
+  {% if analyses.journals_hal is defined and analyses.journals_hal %}
+  <div class="analysis">{{ analyses.journals_hal | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if figures.journals is defined %}
+<section id="journals">
+  <h2>Revues et voies d'accès <span class="section-badge">bêta</span></h2>
+  {{ figures.journals | safe }}
+  {% if journalsinfo is defined and journalsinfo %}<p class="dibiso-info">{{ journalsinfo }}</p>{% endif %}
+  {% if analyses.journals is defined and analyses.journals %}
+  <div class="analysis">{{ analyses.journals | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if figures.conferences is defined %}
+<section id="conferences">
+  <h2>Liste des conférences</h2>
+  {{ figures.conferences | safe }}
+  {% if conferencesinfo is defined and conferencesinfo %}<p class="dibiso-info">{{ conferencesinfo }}</p>{% endif %}
+  {% if analyses.conferences is defined and analyses.conferences %}
+  <div class="analysis">{{ analyses.conferences | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if figures.chapters is defined %}
+<section id="chapters">
+  <h2>Liste des chapitres</h2>
+  {{ figures.chapters | safe }}
+  {% if chaptersinfo is defined and chaptersinfo %}<p class="dibiso-info">{{ chaptersinfo }}</p>{% endif %}
+  {% if analyses.chapters is defined and analyses.chapters %}
+  <div class="analysis">{{ analyses.chapters | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if figures.open_access_works is defined %}
+<section id="open-access-works">
+  <h2>Articles en accès ouvert</h2>
+  {{ figures.open_access_works | safe }}
+  {% if openaccessworksinfo is defined and openaccessworksinfo %}<p class="dibiso-info">{{ openaccessworksinfo }}</p>{% endif %}
+  {% if analyses.open_access_works is defined and analyses.open_access_works %}
+  <div class="analysis">{{ analyses.open_access_works | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if figures.collaboration_map_world is defined or figures.collaboration_map_europe is defined %}
+<section id="collaboration-map">
+  <h2>Cartes des collaborations</h2>
+  {% if figures.collaboration_map_world is defined %}
+  <h3>Collaborations mondiales</h3>
+  {{ figures.collaboration_map_world | safe }}
+  {% endif %}
+  {% if figures.collaboration_map_europe is defined %}
+  <h3>Collaborations européennes</h3>
+  {{ figures.collaboration_map_europe | safe }}
+  {% endif %}
+  {% if analyses.collaboration_map_world is defined and analyses.collaboration_map_world %}
+  <div class="analysis">{{ analyses.collaboration_map_world | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if figures.collaboration_names is defined %}
+<section id="collaboration-names">
+  <h2>Collaborations par établissements</h2>
+  {{ figures.collaboration_names | safe }}
+  {% if collaborationnamesinfo is defined and collaborationnamesinfo %}<p class="dibiso-info">{{ collaborationnamesinfo }}</p>{% endif %}
+  {% if analyses.collaboration_names is defined and analyses.collaboration_names %}
+  <div class="analysis">{{ analyses.collaboration_names | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if figures.private_sector_collaborations is defined %}
+<section id="private-sector">
+  <h2>Collaborations secteur privé <span class="section-badge">bêta</span></h2>
+  {{ figures.private_sector_collaborations | safe }}
+  {% if privatesectorcollaborationsinfo is defined and privatesectorcollaborationsinfo %}<p class="dibiso-info">{{ privatesectorcollaborationsinfo }}</p>{% endif %}
+  {% if analyses.private_sector_collaborations is defined and analyses.private_sector_collaborations %}
+  <div class="analysis">{{ analyses.private_sector_collaborations | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if figures.european_projects is defined %}
+<section id="european-projects">
+  <h2>Projets européens</h2>
+  {{ figures.european_projects | safe }}
+  {% if europeanprojectsinfo is defined and europeanprojectsinfo %}<p class="dibiso-info">{{ europeanprojectsinfo }}</p>{% endif %}
+  {% if analyses.european_projects is defined and analyses.european_projects %}
+  <div class="analysis">{{ analyses.european_projects | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if figures.anr_projects is defined %}
+<section id="anr-projects">
+  <h2>Projets ANR</h2>
+  {{ figures.anr_projects | safe }}
+  {% if anrprojectsinfo is defined and anrprojectsinfo %}<p class="dibiso-info">{{ anrprojectsinfo }}</p>{% endif %}
+  {% if analyses.anr_projects is defined and analyses.anr_projects %}
+  <div class="analysis">{{ analyses.anr_projects | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+<section id="strengths">
+  <h2>Atouts du laboratoire</h2>
+  {% if analyses.strengths is defined and analyses.strengths %}
+  <div class="analysis">{{ analyses.strengths | safe }}</div>
+  {% else %}
+  <p class="dibiso-info"><em>Section à compléter.</em></p>
+  {% endif %}
+</section>
+
+<section id="recommendations">
+  <h2>Préconisations</h2>
+  {% if analyses.recommendations is defined and analyses.recommendations %}
+  <div class="analysis">{{ analyses.recommendations | safe }}</div>
+  {% else %}
+  <p class="dibiso-info"><em>Section à compléter.</em></p>
+  {% endif %}
+</section>
+
+{% endblock %}
