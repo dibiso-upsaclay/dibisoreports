@@ -10,7 +10,7 @@
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
   {% endif %}
 </head>
-<body{% if watermark_text %} class="watermark" data-watermark="{{ watermark_text }}"{% endif %}>
+<body{% if watermarktext is defined and watermarktext %} class="watermark" data-watermark="{{ watermarktext }}"{% endif %}>
 
 {# ── Title page ──────────────────────────────────────────────── #}
 <header class="title-page">
@@ -37,26 +37,41 @@
 </main>
 
 {# ── Last page ───────────────────────────────────────────────── #}
+{% set figures = figures | default({}) %}
+{% set has_hal = figures.journals_hal is defined
+              or figures.conferences is defined
+              or figures.chapters is defined
+              or figures.works_type is defined
+              or figures.open_access_works is defined
+              or figures.collaboration_map_world is defined
+              or figures.collaboration_map_europe is defined
+              or figures.collaboration_names is defined
+              or figures.private_sector_collaborations is defined
+              or figures.european_projects is defined
+              or figures.anr_projects is defined
+              or figures.works_bibtex is defined %}
+{% set has_openalex = figures.collaboration_map_world is defined
+                   or figures.collaboration_map_europe is defined %}
+{% set has_scanr = figures.private_sector_collaborations is defined %}
+{% set has_bso = figures.journals is defined %}
+
 <footer class="last-page">
   <div class="last-page-content">
     {% block last_page_content %}
 
-    {# Contact #}
+    {# ── Contact ──────────────────────────────────────────────── #}
     <div class="last-page-section">
-      <h3>Contact</h3>
-      <p>DiBISO — Université Paris-Saclay</p>
+      <h3>Contactez-nous !</h3>
+      <p>Pour échanger à propos de ce rapport ou toute autre question liée à la science ouverte et vos publications, n'hésitez pas à contacter votre <strong>référent·e laboratoire</strong>{% if reporter is defined and reporter %} : <strong>{{ reporter }}</strong>{% if reporter_email is defined and reporter_email %} — <a href="mailto:{{ reporter_email }}">{{ reporter_email }}</a>{% endif %}{% endif %}.</p>
     </div>
 
-    {# Data sources #}
-    {% set has_hal = figures.journals_hal is defined or figures.conferences is defined or figures.chapters is defined or figures.open_access_works is defined or figures.journals is defined or figures.collaboration_names is defined %}
-    {% set has_openalex = figures.collaboration_map_world is defined or figures.collaboration_map_europe is defined %}
-    {% set has_scanr = figures.journals is defined or figures.private_sector_collaborations is defined %}
-    {% if has_hal or has_openalex or has_scanr %}
+    {# ── Data sources ─────────────────────────────────────────── #}
+    {% if has_hal or has_openalex or has_scanr or has_bso %}
     <div class="last-page-section">
       <h3>Sources des données</h3>
-      <dl>
+      <dl class="sources-list">
         {% if has_hal %}
-        <dt><a href="https://hal.science/">HAL</a></dt>
+        <dt><a href="https://hal.science/"><img src="assets/icons/hal.svg" class="icon-inline" alt="">HAL</a></dt>
         <dd>Archive ouverte nationale</dd>
         {% endif %}
         {% if has_openalex %}
@@ -64,28 +79,91 @@
         <dd>Métadonnées bibliométriques</dd>
         {% endif %}
         {% if has_scanr %}
-        <dt><a href="https://scanr.enseignementsup-recherche.gouv.fr/">scanR / BSO</a></dt>
-        <dd>Baromètre de la Science Ouverte — {% if bsojournalsbsoversion is defined %}version {{ bsojournalsbsoversion }}{% endif %}</dd>
+        <dt><a href="https://scanr.enseignementsup-recherche.gouv.fr/">scanR</a></dt>
+        <dd>Annuaire de la recherche française</dd>
+        {% endif %}
+        {% if has_bso %}
+        <dt><a href="https://barometredelascienceouverte.esr.gouv.fr/">Baromètre français de la Science Ouverte</a></dt>
+        <dd>{% if bsojournalsbsoversion is defined and bsojournalsbsoversion %}version {{ bsojournalsbsoversion }}{% endif %}</dd>
         {% endif %}
       </dl>
+      <p class="last-page-note">Données téléchargées le : {{ datafetchdate | default('') }}</p>
     </div>
     {% endif %}
 
-    {# Code / tools #}
+    {# ── Code / tools ─────────────────────────────────────────── #}
     <div class="last-page-section">
-      <h3>Outils</h3>
-      <p>
-        Généré avec
-        <a href="https://github.com/dibiso-upsaclay/dibisoreporting">dibisoreporting</a>
-        {% if dibisoreportingversion is defined %}v{{ dibisoreportingversion }}{% endif %}
-        et
-        <a href="https://github.com/dibiso-upsaclay/dibisoplot">dibisoplot</a>
-        {% if dibisoplotversion is defined %}v{{ dibisoplotversion }}{% endif %}.
-        Données extraites le {{ datafetchdate | default('') }}.
+      <h3>Code</h3>
+
+      <p class="tools-category"><strong>Analyses et visualisations</strong></p>
+      <ul class="tools-list">
+        <li><img src="assets/icons/pypi.svg" class="icon-inline" alt="PyPI"><a href="https://pypi.org/project/dibisoplot/">dibisoplot</a>{% if dibisoplotversion is defined and dibisoplotversion %} v{{ dibisoplotversion }}{% endif %}</li>
+        <li><img src="assets/icons/doi.svg" class="icon-inline" alt="DOI"><a href="https://doi.org/10.5281/zenodo.17251536">10.5281/zenodo.17251536</a></li>
+        <li><img src="assets/icons/github.svg" class="icon-inline" alt="GitHub"><a href="https://github.com/dibiso-upsaclay/dibisoplot">github.com/dibiso-upsaclay/dibisoplot</a></li>
+      </ul>
+
+      <p class="tools-category"><strong>Génération du rapport</strong></p>
+      <ul class="tools-list">
+        <li><img src="assets/icons/pypi.svg" class="icon-inline" alt="PyPI"><a href="https://pypi.org/project/dibisoreporting/">dibisoreporting</a>{% if dibisoreportingversion is defined and dibisoreportingversion %} v{{ dibisoreportingversion }}{% endif %}</li>
+        <li><img src="assets/icons/doi.svg" class="icon-inline" alt="DOI"><a href="https://doi.org/10.5281/zenodo.17251577">10.5281/zenodo.17251577</a></li>
+        <li><img src="assets/icons/github.svg" class="icon-inline" alt="GitHub"><a href="https://github.com/dibiso-upsaclay/dibisoreporting">github.com/dibiso-upsaclay/dibisoreporting</a></li>
+      </ul>
+
+      <p class="tools-category"><strong>Modèle HTML</strong></p>
+      <ul class="tools-list">
+        <li><img src="assets/icons/github.svg" class="icon-inline" alt="GitHub"><a href="https://github.com/dibiso-upsaclay/dibiso-html-templates">github.com/dibiso-upsaclay/dibiso-html-templates</a></li>
+      </ul>
+
+      <p class="tools-category"><strong>API &amp; application web</strong></p>
+      <ul class="tools-list">
+        <li><img src="assets/icons/github.svg" class="icon-inline" alt="GitHub"><a href="https://github.com/dibiso-upsaclay/dibiso-reporting-api">github.com/dibiso-upsaclay/dibiso-reporting-api</a></li>
+        <li><img src="assets/icons/github.svg" class="icon-inline" alt="GitHub"><a href="https://github.com/dibiso-upsaclay/dibiso-reporting-webapp">github.com/dibiso-upsaclay/dibiso-reporting-webapp</a></li>
+      </ul>
+
+      <p class="tools-category"><strong>Rapport technique</strong></p>
+      <ul class="tools-list">
+        <li><img src="assets/icons/hal.svg" class="icon-inline" alt="HAL"><a href="https://universite-paris-saclay.hal.science/hal-05336463">hal-05336463</a></li>
+      </ul>
+    </div>
+
+    {# ── Authors ──────────────────────────────────────────────── #}
+    <div class="last-page-section last-page-authors">
+      {% if reporter is defined and reporter %}<p>Rédaction : {{ reporter }}</p>{% endif %}
+      <p>Conception :
+        Henri Bretel <a href="https://orcid.org/0000-0001-6922-0915" class="orcid-link" title="ORCID 0000-0001-6922-0915"><img src="assets/icons/orcid.svg" class="icon-orcid" alt="ORCID"></a>,
+        Delphine Le Piolet <a href="https://orcid.org/0000-0001-9756-4408" class="orcid-link" title="ORCID 0000-0001-9756-4408"><img src="assets/icons/orcid.svg" class="icon-orcid" alt="ORCID"></a>,
+        Laili Rahimie <a href="https://orcid.org/0009-0007-7119-215X" class="orcid-link" title="ORCID 0009-0007-7119-215X"><img src="assets/icons/orcid.svg" class="icon-orcid" alt="ORCID"></a>,
+        Romain Thomas <a href="https://orcid.org/0009-0008-9900-1930" class="orcid-link" title="ORCID 0009-0008-9900-1930"><img src="assets/icons/orcid.svg" class="icon-orcid" alt="ORCID"></a>
+      </p>
+      <p>Programmation :
+        Romain Thomas <a href="https://orcid.org/0009-0008-9900-1930" class="orcid-link" title="ORCID 0009-0008-9900-1930"><img src="assets/icons/orcid.svg" class="icon-orcid" alt="ORCID"></a>
       </p>
     </div>
 
     {% endblock %}
+  </div>
+
+  {# ── Team footer — always shown ───────────────────────────── #}
+  <div class="last-page-team-footer">
+    <div class="team-footer-rule"></div>
+    <div class="team-footer-columns">
+      <div class="team-footer-left">
+        <p class="team-footer-heading">L'équipe Science Ouverte</p>
+        <p><a href="mailto:science.ouverte@universite-paris-saclay.fr">science.ouverte@universite-paris-saclay.fr</a></p>
+        <p><a href="https://www.universite-paris-saclay.fr/recherche/science-ouverte">universite-paris-saclay.fr/recherche/science-ouverte</a></p>
+      </div>
+      <div class="team-footer-right">
+        <p><img src="assets/icons/bluesky.svg" class="icon-inline" alt="Bluesky"><a href="https://bsky.app/profile/so-upsaclay.bsky.social">@so-upsaclay.bsky.social</a></p>
+        <p><img src="assets/icons/mastodon.svg" class="icon-inline" alt="Mastodon"><a href="https://social.sciences.re/@SO_UPSaclay">social.sciences.re/@SO_UPSaclay</a></p>
+      </div>
+    </div>
+    <div class="team-footer-bottom">
+      <p class="dibiso-full-name">Direction des Bibliothèques, de l'Information et de la Science Ouverte (DiBISO)</p>
+      <div class="license-logos">
+        <a href="https://creativecommons.org/licenses/by/4.0/" class="cc-by-badge">CC&nbsp;BY&nbsp;4.0</a>
+        <a href="https://www.etalab.gouv.fr/licence-ouverte-open-licence/"><img src="assets/icons/etalab_licence.png" alt="Licence Ouverte Etalab" class="icon-license"></a>
+      </div>
+    </div>
   </div>
 </footer>
 

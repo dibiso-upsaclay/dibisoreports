@@ -54,7 +54,7 @@
 
 {% if figures.journals is defined %}
 <section id="journals">
-  <h2>Revues et voies d'accès</h2>
+  <h2>Revues et voies d'accès <span class="section-badge">bêta</span></h2>
   {{ figures.journals | safe }}
   {% if journalsinfo is defined and journalsinfo %}<p class="dibiso-info">{{ journalsinfo }}</p>{% endif %}
   {% if analyses.journals is defined and analyses.journals %}
@@ -126,7 +126,7 @@
 
 {% if figures.private_sector_collaborations is defined %}
 <section id="private-sector">
-  <h2>Collaborations secteur privé</h2>
+  <h2>Collaborations secteur privé <span class="section-badge">bêta</span></h2>
   {{ figures.private_sector_collaborations | safe }}
   {% if privatesectorcollaborationsinfo is defined and privatesectorcollaborationsinfo %}<p class="dibiso-info">{{ privatesectorcollaborationsinfo }}</p>{% endif %}
   {% if analyses.private_sector_collaborations is defined and analyses.private_sector_collaborations %}
