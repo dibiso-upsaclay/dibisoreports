@@ -195,14 +195,29 @@ class DibisoReporting:
         with open(join(root_path, "context.json"), encoding="utf-8") as f:
             context = json.load(f)
 
+        # Replace interactive Plotly HTML fragments with inline SVG when available.
+        # SVGs render correctly in both WeasyPrint (no JS) and browsers (no layout quirks).
+        figures_dir = join(root_path, "figures")
+        for fig_name in list(figures.keys()):
+            svg_path = join(figures_dir, f"{fig_name}.svg")
+            if os.path.exists(svg_path):
+                with open(svg_path, encoding="utf-8") as svgf:
+                    svg_content = svgf.read()
+                # Remove fixed width/height attributes from the SVG root so CSS can scale it.
+                svg_content = re.sub(r'(<svg[^>]*)\s+width="[^"]*"', r'\1', svg_content, count=1)
+                svg_content = re.sub(r'(<svg[^>]*)\s+height="[^"]*"', r'\1', svg_content, count=1)
+                # Replace Unicode flag emoji (Regional Indicator pairs) with ASCII country codes.
+                # WeasyPrint/Cairo cannot render these emoji glyphs.
+                svg_content = re.sub(
+                    r'([\U0001F1E0-\U0001F1FF])([\U0001F1E0-\U0001F1FF])',
+                    lambda m: f"({chr(ord(m.group(1)) - 0x1F1E6 + ord('A'))}{chr(ord(m.group(2)) - 0x1F1E6 + ord('A'))})",
+                    svg_content,
+                )
+                figures[fig_name] = f'<div class="dibiso-svg-figure">{svg_content}</div>'
+
         context["figures"] = figures
         context["analyses"] = analyses
-        # Detect whether any Plotly fragments are present
-        context["has_plotly_figures"] = any(
-            "<div" in v and "plotly" in v.lower()
-            for v in figures.values()
-            if isinstance(v, str)
-        )
+        context["has_plotly_figures"] = False  # SVG path: no Plotly JS needed
 
         template_dir = join(root_path, "dibiso-html")
         env = Environment(loader=FileSystemLoader(template_dir), autoescape=True)

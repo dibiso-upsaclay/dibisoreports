@@ -139,6 +139,8 @@ class Biso(DibisoReporting):
             max_plotted_entities: int = 25,
             plot_main_color: str | None = None,
             root_path: str | None = None,
+            reporter: str = "",
+            reporter_email: str = "",
             watermark_text: str = "",
             **kwargs
     ):
@@ -188,6 +190,10 @@ class Biso(DibisoReporting):
         :type plot_main_color: str, optional
         :param root_path: Path to the root directory where the report and figures will be generated.
         :type root_path: str
+        :param reporter: Name of the person who wrote the report (shown on the last page). Default to "".
+        :type reporter: str
+        :param reporter_email: Email of the reporter (shown as a mailto link on the last page). Default to "".
+        :type reporter_email: str
         :param watermark_text: The text to be used as a watermark in the report. Default to "" (no watermark).
         :type watermark_text: str
         """
@@ -207,6 +213,8 @@ class Biso(DibisoReporting):
             entity_acronym = str(entity_id)
         self.entity_acronym = entity_acronym
         self.entity_full_name = entity_full_name
+        self.reporter = reporter
+        self.reporter_email = reporter_email
         self.watermark_text = watermark_text
 
         self.data_fetch_date = datetime.now().strftime("%d/%m/%Y")
@@ -272,6 +280,8 @@ class Biso(DibisoReporting):
         self.macros_variables["labacronym"] = self.entity_acronym
         self.macros_variables["labfullname"] = self.entity_full_name
         self.macros_variables["datafetchdate"] = self.data_fetch_date
+        self.macros_variables["reporter"] = self.reporter
+        self.macros_variables["reporter_email"] = self.reporter_email
         self.macros_variables["watermarktext"] = self.watermark_text
         self.macros_variables["dibisoplotversion"] = dibisoplot_version
         self.macros_variables["dibisoreportingversion"] = dibisoreporting_version
