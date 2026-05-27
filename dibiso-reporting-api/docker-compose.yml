@@ -1,0 +1,60 @@
+name: ${COMPOSE_PROJECT_NAME}-api
+
+services:
+  api:
+    container_name: ${COMPOSE_PROJECT_NAME}-api
+    build:
+      context: ..
+      dockerfile: dibiso-reporting-api/Dockerfile
+    volumes:
+      # SQLite user database
+      - ${USERS_DATABASE_DIRECTORY}:/api_data
+      # OpenAlex analysis cache (persists between restarts)
+      - ${OPENALEX_ANALYSIS_CACHE_PATH}:/openalex_analysis_cache
+      # HTML report templates — mount local copy to avoid GitHub download at runtime
+      - ${HTML_TEMPLATE_PATH}:/html_templates
+    ports:
+      - ${API_PORT}:8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    environment:
+      # Auth
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - SECRET_KEY=${SECRET_KEY}
+      - ACCESS_TOKEN_EXPIRE_HOURS=${ACCESS_TOKEN_EXPIRE_HOURS}
+      # Storage
+      - USERS_DATABASE_NAME=${USERS_DATABASE_NAME}
+      - USERS_DATABASE_DIRECTORY=/api_data
+      - PROJECTS_PERSISTENCE_TIME_HOURS=${PROJECTS_PERSISTENCE_TIME_HOURS}
+      - PROJECTS_ANALYSES_RETENTION_DAYS=${PROJECTS_ANALYSES_RETENTION_DAYS}
+      # HTML templates — use mounted local copy (path inside container)
+      - HTML_TEMPLATE_PATH=/html_templates
+      # Fallback URL if local mount is unavailable
+      - HTML_TEMPLATE_URL=${HTML_TEMPLATE_URL}
+      # External APIs
+      - SCANR_API_PASSWORD=${SCANR_API_PASSWORD}
+      - SCANR_API_URL=${SCANR_API_URL}
+      - SCANR_API_USERNAME=${SCANR_API_USERNAME}
+      - SCANR_BSO_INDEX=${SCANR_BSO_INDEX}
+      - SCANR_PUBLICATIONS_INDEX=${SCANR_PUBLICATIONS_INDEX}
+      - OPENALEX_ANALYSIS_CACHE_PATH=/openalex_analysis_cache
+      - OPENALEX_API_KEY=${OPENALEX_API_KEY}
+      - OPENALEX_EMAIL=${OPENALEX_EMAIL}
+      # CORS
+      - CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS}
+      - CORS_ALLOW_CREDENTIALS=${CORS_ALLOW_CREDENTIALS}
+      - CORS_ALLOW_METHODS=${CORS_ALLOW_METHODS}
+      - CORS_ALLOW_HEADERS=${CORS_ALLOW_HEADERS}
+      # Performance
+      - THREAD_POOL_MAX_WORKERS=${THREAD_POOL_MAX_WORKERS}
+      - DATA_FETCHING_TIMEOUT_SECONDS=${DATA_FETCHING_TIMEOUT_SECONDS}
+      # API metadata
+      - API_TITLE=${API_TITLE}
+      - API_VERSION=${API_VERSION}
+      - DEFAULT_MAX_ENTITIES=${DEFAULT_MAX_ENTITIES}
