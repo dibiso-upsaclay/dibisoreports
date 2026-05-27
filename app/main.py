@@ -62,6 +62,7 @@ from .users import (
     UserCreate,
     UserResponse,
     UserUpdate,
+    ProfileUpdate,
     PasswordChange,
     AdminPasswordChange,
     create_user_in_db,
@@ -70,6 +71,7 @@ from .users import (
     get_user_by_id,
     update_user_info,
     update_user_info_by_id,
+    update_user_profile,
     update_user_password,
     update_user_password_by_id,
     deactivate_user,
@@ -105,7 +107,9 @@ class ReportRequest(BaseModel):
     entity_acronym: str = Field(..., min_length=1, description="Laboratory acronym")
     entity_full_name: str = Field(..., min_length=1, description="Full laboratory name")
     entity_id: str = Field(..., min_length=1, description="HAL collection ID")
-    max_entities:int = Field(..., ge=1, le=10000, description="Max entities to use for maps")
+    max_entities: int = Field(..., ge=1, le=10000, description="Max entities to use for maps")
+    reporter: str = Field("", description="Name of the person writing the report")
+    reporter_email: str = Field("", description="Email of the reporter")
 
 thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=int(os.getenv("THREAD_POOL_MAX_WORKERS")))
 
@@ -350,7 +354,9 @@ async def read_users_me(current_user: Annotated[dict, Depends(get_current_active
         email=current_user["email"],
         role=current_user["role"],
         is_active=current_user["is_active"],
-        created_at=datetime.fromisoformat(current_user["created_at"])
+        created_at=datetime.fromisoformat(current_user["created_at"]),
+        first_name=current_user.get("first_name") or "",
+        last_name=current_user.get("last_name") or "",
     )
 
 
@@ -387,7 +393,9 @@ async def update_current_user(
         email=updated_user["email"],
         role=updated_user["role"],
         is_active=updated_user["is_active"],
-        created_at=datetime.fromisoformat(updated_user["created_at"])
+        created_at=datetime.fromisoformat(updated_user["created_at"]),
+        first_name=updated_user.get("first_name") or "",
+        last_name=updated_user.get("last_name") or "",
     )
 
 
@@ -408,6 +416,30 @@ async def change_password(
     update_user_password(current_user["username"], password_data.new_password)
 
     return {"message": "Password updated successfully"}
+
+
+@app.get("/users/me/profile")
+async def get_my_profile(current_user: Annotated[dict, Depends(get_current_active_user)]):
+    """Get current user profile (first_name, last_name, email)"""
+    return {
+        "first_name": current_user.get("first_name") or "",
+        "last_name": current_user.get("last_name") or "",
+        "email": current_user.get("email") or "",
+    }
+
+
+@app.put("/users/me/profile")
+async def update_my_profile(
+    profile: ProfileUpdate,
+    current_user: Annotated[dict, Depends(get_current_active_user)]
+):
+    """Update current user profile"""
+    if profile.email:
+        existing = get_user_by_email(profile.email)
+        if existing and existing["id"] != current_user["id"]:
+            raise HTTPException(status_code=400, detail="Email already in use")
+    update_user_profile(current_user["username"], profile.first_name, profile.last_name, profile.email)
+    return {"message": "Profile updated successfully"}
 
 
 @app.delete("/users/me")
@@ -471,7 +503,9 @@ async def admin_update_user(
         email=updated_user["email"],
         role=updated_user["role"],
         is_active=updated_user["is_active"],
-        created_at=datetime.fromisoformat(updated_user["created_at"])
+        created_at=datetime.fromisoformat(updated_user["created_at"]),
+        first_name=updated_user.get("first_name") or "",
+        last_name=updated_user.get("last_name") or "",
     )
 
 
@@ -717,6 +751,41 @@ def launch_latex_compile_command(comp_id, progress, project_folder, tex_file, pa
     )
 
 
+def apply_background_to_pdf(pdf_path: Path, background_pdf_path: Path) -> None:
+    """Overlay cycling background pages on content pages of a PDF (skip first and last)."""
+    try:
+        import fitz
+    except ImportError:
+        logger.warning("PyMuPDF not available; skipping background overlay")
+        return
+    if not background_pdf_path.exists():
+        return
+    try:
+        main_doc = fitz.open(str(pdf_path))
+        bg_doc = fitz.open(str(background_pdf_path))
+        n = main_doc.page_count
+        num_bg = bg_doc.page_count
+        if n <= 2 or num_bg == 0:
+            bg_doc.close()
+            main_doc.close()
+            return
+        new_doc = fitz.open()
+        for i in range(n):
+            page = main_doc[i]
+            new_page = new_doc.new_page(width=page.rect.width, height=page.rect.height)
+            if 1 <= i <= n - 2:
+                bg_idx = (i - 1) % num_bg
+                new_page.show_pdf_page(new_page.rect, bg_doc, bg_idx)
+            new_page.show_pdf_page(new_page.rect, main_doc, i)
+        bg_doc.close()
+        main_doc.close()
+        new_doc.save(str(pdf_path))
+        new_doc.close()
+        logger.info(f"Applied background overlay to {pdf_path.name}")
+    except Exception as e:
+        logger.error(f"Background overlay failed for {pdf_path}: {e}")
+
+
 def render_html_to_pdf(project_dir: Path, output_dir: Path, comp_id: str) -> list[Optional[Path]]:
     """
     Render report.html / biblio.html → PDF via WeasyPrint.
@@ -769,6 +838,9 @@ def render_html_to_pdf(project_dir: Path, output_dir: Path, comp_id: str) -> lis
         try:
             pdf_path = output_dir / f"{name}.pdf"
             WeasyprintHTML(filename=str(html_path)).write_pdf(str(pdf_path), presentational_hints=True)
+            if html_template_path:
+                bg_path = Path(html_template_path) / "dibiso-html" / "assets" / "background.pdf"
+                apply_background_to_pdf(pdf_path, bg_path)
             # Also copy HTML to output dir for download
             shutil.copy2(str(html_path), str(output_dir / f"{name}.html"))
             results.append(pdf_path)
@@ -900,6 +972,8 @@ def your_latex_project_generator(comp_id: str, request_data: ReportRequest) -> O
         _acronym = _json.dumps(request_data.entity_acronym)
         _fullname = _json.dumps(request_data.entity_full_name)
         _entity_id = _json.dumps(request_data.entity_id)
+        _reporter = _json.dumps(request_data.reporter)
+        _reporter_email = _json.dumps(request_data.reporter_email)
         process = subprocess.Popen([
             sys.executable, '-c',
             f'''
@@ -926,6 +1000,8 @@ biso_reporting = Biso(
     html_template_url={_html_tpl} if {_html_path} == "None" else None,
     max_entities={request_data.max_entities},
     root_path={_project_dir},
+    reporter={_reporter},
+    reporter_email={_reporter_email},
     watermark_text="",
     scanr_api_password={_scanr_pwd},
     scanr_api_url={_scanr_url},
@@ -1128,27 +1204,14 @@ def run_compilation(comp_id: str, request_data: ReportRequest):
             cleanup_directories(project_folder, temp_dir)
             return
 
-        # Check if LaTeX compilation succeeded
+        # render_html_to_pdf writes PDFs directly into temp_dir, so pdf_paths already
+        # point to temp_dir/report.pdf and temp_dir/biblio.pdf — no copy needed.
         compilation_successful = None not in pdf_paths
 
-        # Copy PDFs to temp directory if they exist
-        report_pdf = None
-        biblio_pdf = None
-        if compilation_successful:
-            report_pdf = temp_dir / "report.pdf"
-            biblio_pdf = temp_dir / "biblio.pdf"
-            try:
-                shutil.copy2(pdf_paths[0], report_pdf)
-                shutil.copy2(pdf_paths[1], biblio_pdf)
-            except Exception as e:
-                logger.error(f"Error copying PDF for {comp_id}: {e}")
-                compilation_successful = False
-
-        # Clean up the original project folder
-        try:
-            shutil.rmtree(project_folder)
-        except Exception as e:
-            logger.error(f"Error cleaning up project folder for {comp_id}: {e}")
+        # Keep project_folder alive for the session so /report-sections and /figures
+        # endpoints can serve figure previews and section metadata to the edit view.
+        # The cleanup task (cleanup_old_compilations) will remove it after
+        # PROJECTS_PERSISTENCE_TIME_HOURS hours.
 
         # Final check for cancellation before marking as completed
         with compilation_lock:
@@ -1378,11 +1441,126 @@ async def export_report(
     return {"message": "Export started", "comp_id": comp_id}
 
 
+def _convert_svg_style_to_attrs(html_content: str) -> str:
+    """Move SVG presentation properties from inline style= to SVG element attributes.
+
+    WeasyPrint 68 parses inline style= via its CSS engine, which rejects SVG-specific
+    properties (fill, stroke, etc.) as unknown. Moving them to presentation attributes
+    fixes rendering of Plotly-generated inline SVGs.
+    """
+    import re as _re
+
+    SVG_PROPS = frozenset([
+        'fill', 'fill-opacity', 'fill-rule',
+        'stroke', 'stroke-opacity', 'stroke-width',
+        'stroke-dasharray', 'stroke-dashoffset',
+        'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit',
+        'vector-effect', 'clip-rule', 'clip-path',
+        'stop-color', 'stop-opacity',
+        'paint-order', 'shape-rendering',
+        'marker-start', 'marker-mid', 'marker-end',
+    ])
+
+    def process_element(match):
+        full_tag = match.group(0)
+        style_m = _re.search(r'\sstyle="([^"]*)"', full_tag)
+        if not style_m:
+            return full_tag
+        # Preserve self-closing tags — stripping '/' turns <path/> into an unclosed element
+        # which swallows all subsequent siblings (including text labels) as invisible children.
+        is_self_closing = full_tag.rstrip().endswith('/>')
+        close = '/>' if is_self_closing else '>'
+        style_str = style_m.group(1)
+        css_parts = []
+        new_attrs = {}
+        for part in style_str.split(';'):
+            part = part.strip()
+            if not part:
+                continue
+            prop, _, val = part.partition(':')
+            prop = prop.strip()
+            val = val.strip()
+            if prop in SVG_PROPS:
+                if prop == 'stroke-width' and val.endswith('px'):
+                    val = val[:-2]
+                new_attrs[prop] = val
+            else:
+                css_parts.append(f'{prop}: {val}')
+        new_style = '; '.join(css_parts)
+        updated_tag = full_tag.replace(style_m.group(0), f' style="{new_style}"' if new_style else '')
+        for attr, val in new_attrs.items():
+            if f' {attr}=' not in updated_tag:
+                updated_tag = updated_tag.rstrip('>').rstrip('/').rstrip() + f' {attr}="{val}"{close}'
+        return updated_tag
+
+    def process_svg_block(svg_match):
+        svg_content = svg_match.group(0)
+        svg_content = _re.sub(
+            r'<(?:path|rect|circle|ellipse|line|polyline|polygon|text|tspan|g|use|'
+            r'symbol|marker|stop|linearGradient|radialGradient|pattern|defs|clipPath)\b[^>]*>',
+            process_element,
+            svg_content,
+        )
+        return svg_content
+
+    return _re.sub(r'<svg\b.*?</svg>', process_svg_block, html_content, flags=_re.DOTALL)
+
+
+def _inline_assets_in_html(html_content: str, project_dir: Path) -> str:
+    """Replace CSS <link> tags with inline <style> blocks and image src with base64 data URIs."""
+    import base64
+    import re as _re
+    template_dir = project_dir / "dibiso-html"
+    # Fallback to global template mount so assets added after project generation still inline
+    global_template_dir = (Path(html_template_path) / "dibiso-html") if html_template_path else None
+
+    def _resolve(relative: str) -> Path | None:
+        # Prefer global mount (always current) over project copy (may be stale from generation time)
+        if global_template_dir:
+            p2 = global_template_dir / relative
+            if p2.exists():
+                return p2
+        p = template_dir / relative
+        if p.exists():
+            return p
+        return None
+
+    def replace_css_link(match):
+        href = _re.search(r'href="([^"]+)"', match.group(0))
+        if not href:
+            return match.group(0)
+        css_path = _resolve(href.group(1))
+        if css_path:
+            return f'<style>\n{css_path.read_text(encoding="utf-8")}\n</style>'
+        return match.group(0)
+
+    html_content = _re.sub(r'<link[^>]+rel="stylesheet"[^>]*>', replace_css_link, html_content)
+
+    def replace_img_src(match):
+        src_match = _re.search(r'src="([^"]+)"', match.group(0))
+        if not src_match:
+            return match.group(0)
+        src = src_match.group(1)
+        if src.startswith(('data:', 'http:', 'https:')):
+            return match.group(0)
+        img_path = _resolve(src)
+        if img_path:
+            mime = 'image/svg+xml' if src.endswith('.svg') else 'image/png'
+            b64 = base64.b64encode(img_path.read_bytes()).decode('ascii')
+            return match.group(0).replace(f'src="{src}"', f'src="data:{mime};base64,{b64}"')
+        return match.group(0)
+
+    html_content = _re.sub(r'<img\b[^>]*>', replace_img_src, html_content)
+    html_content = _convert_svg_style_to_attrs(html_content)
+    return html_content
+
+
 def _do_export(comp_id: str, user_id: int, project_dir: Path, output_dir: Path):
-    """Background export task: render Jinja2 + WeasyPrint."""
+    """Background export task: render Jinja2 → HTML (always), then WeasyPrint → PDF (if GTK available)."""
     import markdown as md_lib
     from dibisoreporting import DibisoReporting
 
+    # Step 1: Re-render HTML with current analyses
     try:
         raw_analyses = get_analyses(comp_id, user_id)
         analyses_html = {k: md_lib.markdown(v) for k, v in raw_analyses.items() if v}
@@ -1395,26 +1573,57 @@ def _do_export(comp_id: str, user_id: int, project_dir: Path, output_dir: Path):
                 compilation_status[comp_id]['last_updated'] = datetime.now()
         return
 
-    from weasyprint import HTML as WeasyprintHTML
-    pdf_urls = {}
+    # Step 2: Inline CSS+assets → self-contained HTML in output dir
+    html_urls = {}
     for name in ("report", "biblio"):
         html_path = project_dir / f"{name}.html"
-        if not html_path.exists():
-            continue
-        try:
-            pdf_path = output_dir / f"{name}.pdf"
-            WeasyprintHTML(filename=str(html_path)).write_pdf(str(pdf_path), presentational_hints=True)
-            shutil.copy2(str(html_path), str(output_dir / f"{name}.html"))
-            pdf_urls[name] = f"/download-pdf?temp_id={comp_id}&file_name={name}"
-        except Exception as e:
-            logger.error(f"WeasyPrint failed for {name} in export {comp_id}: {e}")
+        if html_path.exists():
+            inlined = _inline_assets_in_html(html_path.read_text(encoding="utf-8"), project_dir)
+            out_path = output_dir / f"{name}.html"
+            out_path.write_text(inlined, encoding="utf-8")
+            html_urls[name] = f"/download-html?temp_id={comp_id}&file_name={name}"
+
+    # Step 3: PDF via WeasyPrint using the inlined HTML so CSS is resolved
+    pdf_urls = {}
+    try:
+        from weasyprint import HTML as WeasyprintHTML
+        for name in ("report", "biblio"):
+            inlined_path = output_dir / f"{name}.html"
+            if not inlined_path.exists():
+                continue
+            try:
+                pdf_path = output_dir / f"{name}.pdf"
+                WeasyprintHTML(filename=str(inlined_path)).write_pdf(str(pdf_path), presentational_hints=True)
+                if html_template_path:
+                    bg_path = Path(html_template_path) / "dibiso-html" / "assets" / "background.pdf"
+                    apply_background_to_pdf(pdf_path, bg_path)
+                pdf_urls[name] = f"/download-pdf?temp_id={comp_id}&file_name={name}"
+            except Exception as e:
+                logger.error(f"WeasyPrint failed for {name} in export {comp_id}: {e}")
+    except OSError as e:
+        logger.warning(f"WeasyPrint unavailable for export {comp_id} (GTK missing): {e}")
+
+    # Step 4: Copy inlined HTML back to project_dir then create ZIP so it includes the styled files
+    zip_url = None
+    try:
+        for name in ("report", "biblio"):
+            inlined_path = output_dir / f"{name}.html"
+            if inlined_path.exists():
+                shutil.copy2(str(inlined_path), str(project_dir / f"{name}.html"))
+        zip_path = output_dir / "project.zip"
+        create_zip_archive(project_dir, zip_path)
+        zip_url = f"/download-zip?temp_id={comp_id}"
+    except Exception as e:
+        logger.error(f"ZIP creation failed for export {comp_id}: {e}")
 
     with compilation_lock:
         if comp_id in compilation_status:
             compilation_status[comp_id].update({
                 'export_status': 'done',
                 'export_pdf_url': pdf_urls.get('report'),
-                'export_html_url': f"/download-html?temp_id={comp_id}&file_name=report",
+                'export_html_url': html_urls.get('report'),
+                'export_biblio_html_url': html_urls.get('biblio'),
+                'export_zip_url': zip_url,
                 'temp_dir': str(output_dir),
                 'last_updated': datetime.now(),
             })
@@ -1650,6 +1859,37 @@ async def download_zip(
         filename="latex_project.zip",
         media_type="application/zip"
     )
+
+
+# ── Template static assets (public — CSS/images only, no report data) ────────
+
+@app.get("/template-assets/{file_path:path}")
+async def serve_template_asset(file_path: str):
+    """
+    Serve CSS and image assets from the local HTML template directory.
+    Public (no auth) — these files contain no report data, only styling.
+    Only files inside css/ and assets/ sub-directories are accessible.
+    """
+    if html_template_path is None:
+        raise HTTPException(status_code=404, detail="No local template path configured")
+
+    # Restrict to safe subdirectories
+    allowed_prefixes = ("css/", "assets/")
+    if not any(file_path.startswith(p) for p in allowed_prefixes):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    # Resolve and validate path stays within the template directory
+    template_dir = Path(html_template_path) / "dibiso-html"
+    target = (template_dir / file_path).resolve()
+    try:
+        target.relative_to(template_dir.resolve())
+    except ValueError:
+        raise HTTPException(status_code=403, detail="Path traversal denied")
+
+    if not target.exists() or not target.is_file():
+        raise HTTPException(status_code=404, detail="Asset not found")
+
+    return FileResponse(str(target))
 
 
 # Health check endpoint (public)

@@ -1,14 +1,19 @@
 fastapi[standard]>=0.116.1,<0.117.0
 uvicorn[standard]
 pydantic
+pydantic[email]
 python-dotenv
 passlib[bcrypt]
 python-jose[cryptography]
-dibisoreporting>=0.7
-pydantic[email]
 python-multipart
 starlette
 requests
 markdown>=3.5
 weasyprint>=62
-kaleido>=1.0.0
+pypdf
+pdfCropMargins
+# kaleido 0.2.1 ships its own Electron — works headlessly in Docker without Chrome.
+# On Windows dev, override with: pip install "kaleido>=1.0.0"  (0.2.1 hangs on Windows)
+kaleido==0.2.1
+# dibisoreporting and dibisoplot are installed from local source in Docker (see Dockerfile)
+# and with `pip install -e dibisoreporting/ -e dibisoplot/` in local dev.

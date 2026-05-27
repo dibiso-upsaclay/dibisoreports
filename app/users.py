@@ -23,10 +23,17 @@ class UserResponse(BaseModel):
     role: str
     is_active: bool
     created_at: datetime
+    first_name: Optional[str] = ""
+    last_name: Optional[str] = ""
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     role: Optional[str] = None
+
+class ProfileUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[EmailStr] = None
 
 class PasswordChange(BaseModel):
     current_password: str
@@ -49,9 +56,17 @@ def init_database():
             hashed_password TEXT NOT NULL,
             role TEXT DEFAULT 'user' CHECK(role IN ('user', 'admin')),
             is_active BOOLEAN DEFAULT TRUE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            first_name TEXT DEFAULT '',
+            last_name TEXT DEFAULT ''
         )
     ''')
+    # Migration: add first_name / last_name to existing databases
+    for col in ("first_name", "last_name"):
+        try:
+            cursor.execute(f"ALTER TABLE users ADD COLUMN {col} TEXT DEFAULT ''")
+        except Exception:
+            pass  # column already exists
 
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS report_analyses (
@@ -180,6 +195,27 @@ def create_user_in_db(user_data: UserCreate) -> Dict:
     conn.close()
 
     return user
+
+def update_user_profile(username: str, first_name: str | None, last_name: str | None, email: str | None):
+    """Update user profile fields (first_name, last_name, email)."""
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    updates, params = [], []
+    if first_name is not None:
+        updates.append("first_name = ?")
+        params.append(first_name)
+    if last_name is not None:
+        updates.append("last_name = ?")
+        params.append(last_name)
+    if email is not None:
+        updates.append("email = ?")
+        params.append(email)
+    if updates:
+        params.append(username)
+        cursor.execute(f"UPDATE users SET {', '.join(updates)} WHERE username = ?", params)
+        conn.commit()
+    conn.close()
+
 
 def update_user_info(username: str, email: EmailStr | None = None, role: str = None):
     """Update user information"""
