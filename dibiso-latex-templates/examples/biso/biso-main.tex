@@ -1,0 +1,362 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%                                             %%%%%%%%%%
+%%%%%%%%%%  You can reuse this work under:             %%%%%%%%%%
+%%%%%%%%%%  CC-BY-4.0 OR  etalab-2.0                   %%%%%%%%%%
+%%%%%%%%%%                                             %%%%%%%%%%
+%%%%%%%%%%  Henri Bretel, Delphine Le Piolet,          %%%%%%%%%%
+%%%%%%%%%%  Laili Rahimie, Romain Thomas ; 2025        %%%%%%%%%%
+%%%%%%%%%%                                             %%%%%%%%%%
+%%%%%%%%%%  science.ouverte@universite-paris-saclay.fr %%%%%%%%%%
+%%%%%%%%%%  DiBISO - Université Paris-Saclay           %%%%%%%%%%
+%%%%%%%%%%                                             %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%% needed for the template to find the class dir when the class folder
+%% is not stored in the same directory than the main tex file
+%\def\classdir{dibiso}
+
+\input{names_and_macros}
+
+\documentclass[french, 11pt]{dibiso/biso}
+
+\title{Bilan \\ Science \\ Ouverte}
+
+\author{Direction des bibliothèques, de l'information et de la science ouverte}
+
+\date{Année \reportyear}
+
+\subtitle{\textbf{Laboratoire \labacronym} \\
+  \medskip
+  \labfullname
+}
+
+%\titledescription{}
+
+% Écriver votre nom entre les crochets ci-dessous, par exemple :
+% \reporter{Prénom Nom}
+\reporter{}
+% Écriver votre adresse email entre les crochets ci-dessous, par exemple : 
+% \reporteremail{reporter.email@example.com}
+\reporteremail{}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%% COMMENT REMPLIR LE BISO %%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                             %
+% Commenter des parties à exclure :                                           %
+% Pour commenter des sections que vous ne souhaitez pas inclure dans le       %
+% rapport final, vous pouvez utiliser le symbole % au début de chaque ligne   %
+% que vous souhaitez exclure. Cela peut vous servir à ne pas afficher des     %
+% sections du rapports que vous ne jugez pas appropriées pour le laboratoire. %
+%                                                                             %
+%                                                                             %
+% Créer une liste à puces :                                                   %
+% Pour créer une liste à puces, utilisez l'environnement itemize. Voici un    %
+% exemple :                                                                   %
+% \begin{itemize}                                                             %
+%     \item Premier élément de la liste                                       %
+%     \item Deuxième élément de la liste                                      %
+%     \item Troisième élément de la liste                                     %
+% \end{itemize}                                                               %
+%                                                                             %
+%                                                                             % 
+% Mettre du texte en gras :                                                   %
+% Pour mettre du texte en gras, utilisez la commande \textbf{}. Par exemple : %
+% Voici un exemple de \textbf{texte en gras}.                                 %
+%                                                                             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%% COMMENT REMPLIR LE BISO %%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{document}
+
+\renewcommand{\arraystretch}{2}
+
+
+\maketitle
+
+\tableofcontents
+
+\pagebreak
+
+
+
+\section{Introduction}
+
+
+\subsection*{Méthodologie et objectifs}
+
+Le BiSO est un bilan science ouverte établi à partir des publications présentes dans HAL. Il est produit sur l'année $\mathrm{n} - 1$ à l'automne afin de permettre une plus grande exhaustivité des dépôts référencés dans la collection HAL du laboratoire.
+
+Cette démarche est encouragée par la politique Science Ouverte de l'Université\footnote{\url{https://www.universite-paris-saclay.fr/recherche/science-ouverte/la-science-ouverte-luniversite-paris-saclay}} : \\
+\say{Objectif n°1 : Faire du libre accès la règle pour l'ensemble des publications scientifiques de l'Université.}
+
+Sauf mention particulière, les données utilisées pour les graphiques proviennent de la collection HAL \texttt{\halcollectionid} et de l'année {\reportyear}.
+
+\subsection*{Calendrier annuel}
+
+\begin{enumerate}
+  \item Printemps : Le Référent recherche SO envoie une liste\footnote{Extraction des données avec l'outil \say{HAL Collection checker} : \url{https://simple-hcc-ui.streamlit.app/}} des publications manquantes dans HAL au DU du laboratoire.
+  \item Été : les chercheurs et doctorants sont invités à déposer les publications manquantes\footnote{Attention : les publications non renseignées dans HAL ne sont pas incluses dans ce rapport.} dans HAL, idéalement en déposant le texte intégral (version postprint) ou à défaut les notices bibliographiques.
+  \item Automne : votre référent recherche produit le BiSO et le communique au DU du laboratoire.
+\end{enumerate}
+
+
+Ce bilan est proposé pour donner un aperçu annuel des atouts SO du laboratoire, en présentant une liste exhaustive des revues, conférences, collaborations et taux d'accès ouvert accompagné d'un relevé des actions en faveur de la science ouverte, et de propositions d'amélioration.
+
+Ce document est à l'attention des directeurs, directrices, et toute personne du laboratoire qui participe activement aux actions de développement de la Science Ouverte. Communiqué seulement en interne, il permet aux référents recherche de vous présenter des données HAL, préalablement nettoyées, avec la participation des chercheurs pour les dépôts, afin de refléter au mieux la production scientifique. Remis chaque année, le BiSO vise également à vous aider à anticiper la préparation de rapports (ex : HCERES).
+
+
+\subsection*{Déposer dans une archive ouverte}
+
+La loi pour la République Numérique permet aux auteurs travaillant dans une institution publique en France depuis 2016, de partager le postprint sur HAL, avec un embargo de 6 mois pour les disciplines STM et 1 an pour les SHS.
+
+\pagebreak
+
+\section{Liste des revues}
+
+
+\begin{figure}[!h]
+  \includegraphics[width=\textwidth]{figures/journals_hal.pdf}
+  \centering
+  \caption{Revues renseignées dans HAL}
+  \label{fig_jorunals_hal}
+\end{figure}
+
+{\footnotesize\journalshalinfo}
+
+
+% Ecrire un commentaire sur la liste des revues dans HAL ci-dessous :
+
+
+
+
+
+% Fin de la liste des revues dans HAL
+
+\pagebreak
+
+\section{Liste des conférences}
+
+\begin{figure}[!h]
+  \includegraphics[width=\textwidth]{figures/conferences.pdf}
+  \centering
+  \caption{Conférences renseignées dans HAL}
+  \label{fig_conferences}
+\end{figure}
+
+{\footnotesize\conferencesinfo}
+
+\pagebreak
+
+\section{Liste des chapitres}
+
+{
+  \footnotesize
+  \input{figures/chapters.tex}
+}
+
+{\footnotesize\chaptersinfo}
+
+\pagebreak
+
+\section{Typologie de la production scientifique}
+
+\begin{figure}[!h]
+  \includegraphics[width=\textwidth]{figures/works_type.pdf}
+  \centering
+  \caption{Types de documents renseignés dans HAL}
+  \label{fig_doc_type}
+\end{figure}
+
+{\footnotesize\workstypeinfo}
+
+% Ecrire un commentaire sur la typologie de la production scientifique ci-dessous :
+
+
+
+
+
+% Fin de la typologie de la production scientifique
+
+\pagebreak
+
+\section{Articles et Communications de congrès en accès ouvert} % Evolution sur une période de 5 ans (2020-2024)
+
+\begin{figure}[!h]
+  \includegraphics[width=\textwidth]{figures/open_access_works.pdf}
+  \caption{Statut des accès ouverts des travaux sur la période {\oaworksperiod}}
+  \label{fig_open_access_works}
+\end{figure}
+
+{\footnotesize\openaccessworksinfo}
+
+\begin{tcolorbox}[colback=white, arc=4pt, boxrule=0.5pt, left=2pt, right=2pt, top=2pt, bottom=2pt]
+\footnotesize
+\begin{description}[leftmargin=!, labelwidth=\widthof{\bfseries OA Hors HAL}]
+    \item[TI dans HAL] PDF librement accessible pour tous sur l'archive ouverte HAL
+    \item[OA Hors HAL] PDF disponible sur les sites éditeurs, ou sur une archive ouverte autre que HAL, dépôt à l'étranger, disciplinaire tel que Arxiv, Pubmed etc
+    \item[Accès fermé] notice seule sur HAL. En l'absence d'abonnement à la revue, les lecteurs n'ont pas accès au contenu.
+\end{description}
+\end{tcolorbox}
+
+\bigskip
+
+% Ecrire un commentaire sur les articles et communication de congrès en accès ouvert ci-dessous :
+
+
+
+
+
+% Fin des articles et communication de congrès en accès ouvert
+
+\pagebreak
+
+
+\section[Version bêta]{Liste des revues et les voies d'accès ouvert repérés dans le BSO}
+
+Ce tableau utilise des données du Baromètre français de la Science Ouverte. Ces données sont compilées le dernier trimestre de chaque année (généralement en décembre), sur les données de l'année précédente. Ainsi, le tableau montre le nombre de publications en accès ouvert lors du trimestre 2024Q4.
+
+Il existe généralement un déficit de couverture d'environ 30 \% par rapport à HAL : sur {\bsojournalsnbworks} travaux dans HAL, {\bsojournalsnbworksfoundinbso} ont été trouvées dans le BSO.
+
+La colonne \say{APC payés} indique le montant de frais APC détecté comme payé par le BSO. Comme toute donnée collectée à travers de multiples sources hétérogènes, certaines données peuvent être manquantes ou inexactes, mais permettent néanmoins d'avoir un aperçu général de l'ouverture de la production scientifique.
+
+{
+  \footnotesize
+  \input{figures/journals.tex}
+}
+
+{\footnotesize\journalsinfo}
+
+% Ecrire un commentaire sur Liste des revues et les voies d’accès ouvert repérés dans le BSO  ci-dessous :
+ 
+ 
+ 
+ 
+ 
+% Fin de Liste des revues et les voies d’accès ouvert repérés dans le BSO
+
+\pagebreak
+
+\section{Carte des collaborations internationales}
+
+{\collaborationsnb} collaborations parmi {\institutionsnb} institutions dans {\countriesnb} pays.
+
+\begin{figure}[!h]
+  \hspace{-.1\textwidth}\includegraphics[width=1.2\textwidth]{figures/collaboration_map_world.pdf}
+  \caption{Collaborations Internationales - Données : publications renseignées dans HAL avec un DOI, en utilisant les métadonnées d'OpenAlex}
+  \label{fig_collab_map}
+\end{figure}
+
+{\footnotesize\collaborationmapworldinfo}
+
+\pagebreak
+
+\section{Carte des collaborations Européennes}
+
+\begin{figure}[!h]
+  \includegraphics[width=\textwidth]{figures/collaboration_map_europe.pdf}
+  \caption{Collaborations Européennes - Données : publications renseignées dans HAL avec un DOI, en utilisant les métadonnées d'OpenAlex}
+  \label{fig_collab_map_europe}
+\end{figure}
+
+{\footnotesize\collaborationmapeuropeinfo}
+
+\pagebreak
+
+\section{Collaborations internationales par établissements}
+
+\begin{figure}[!h]
+  \includegraphics[width=\textwidth]{figures/collaboration_names.pdf}
+  \caption{Collaborations internationales hors France - Données : Nom des institutions renseignées dans HAL}
+  \label{fig_collab_names}
+\end{figure}
+
+{\footnotesize\collaborationnamesinfo}
+
+\pagebreak
+
+\section[Version bêta]{Collaborations avec le secteur privé}
+
+\begin{figure}[!h]
+  \includegraphics[width=\textwidth]{figures/private_sector_collaborations.pdf}
+  \centering
+  \caption{Collaborations avec le secteur privé - Données : publications renseignées dans HAL, en utilisant les métadonnées de scanR}
+  \label{fig_private_collab}
+\end{figure}
+
+{\footnotesize\privatesectorcollaborationsinfo}
+
+
+% Ecrire un commentaire sur les collaborations (non académique) avec le secteur privé  ci-dessous :
+
+
+
+
+
+% Fin des collaborations (non académique) avec le secteur privé
+
+\pagebreak
+
+\section{Publications liées à des projets européens}
+
+\begin{figure}[!h]
+  \includegraphics[width=.85\textwidth]{figures/european_projects.pdf}
+  \centering
+  \caption{Projets Européens renseignés dans HAL}
+  \label{fig_eu_projects}
+\end{figure}
+
+{\footnotesize\europeanprojectsinfo}
+
+\section{Publications liées à des projets ANR}
+
+\begin{figure}[!h]
+  \includegraphics[width=.85\textwidth]{figures/anr_projects.pdf}
+  \centering
+  \caption{Projets ANR renseignés dans HAL}
+  \label{fig_anr_projects}
+\end{figure}
+
+{\footnotesize\anrprojectsinfo}
+
+\pagebreak
+
+\section{Jeux de données partagés}
+
+Un guichet unique est à votre disposition pour vous accompagner sur toutes les questions en lien avec les données de la recherche : \href{mailto:donnees-recherche@universite-paris-saclay.fr}{donnees-recherche@universite-paris-saclay.fr}
+
+% Ecrire un commentaire sur les données - jeux de données partagés ci-dessous :
+
+
+
+
+
+% Fin des données - jeux de données partagés
+
+\pagebreak
+
+\section{Les atouts du Laboratoire dans son engagement pour la science ouverte}
+
+% Ecrire un commentaire sur les atouts du Laboratoire dans son engagement pour la science ouverte ci-dessous :
+
+
+
+
+
+% Fin des atouts du Laboratoire dans son engagement pour la science ouverte 
+
+
+\section{Préconisations, pour aller plus loin}
+
+% Ecrire un commentaire sur les préconisations, pour aller plus loin ci-dessous :
+
+
+
+
+
+% Fin des préconisations, pour aller plus loin
+
+
+\makelastpagereport
+ 
+\end{document}

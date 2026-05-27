@@ -1,0 +1,482 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%                                    %%%%%%%%%%
+%%%%%%%%%%  You can reuse this work under:    %%%%%%%%%%
+%%%%%%%%%%  LPPL-1.3c OR GPL-3.0-only         %%%%%%%%%%
+%%%%%%%%%%                                    %%%%%%%%%%
+%%%%%%%%%%  Romain THOMAS 2025                %%%%%%%%%%
+%%%%%%%%%%  contact@romainthomas.net          %%%%%%%%%%
+%%%%%%%%%%  DiBISO - Université Paris-Saclay  %%%%%%%%%%
+%%%%%%%%%%                                    %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% LANGUAGE OPTIONS %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newif\if@french
+\newif\if@english
+
+% Default to French
+\@frenchtrue
+\@englishfalse
+
+\DeclareOption{french}{%
+  \@frenchtrue
+  \@englishfalse
+  \PassOptionsToPackage{french}{babel}
+}
+
+\DeclareOption{english}{%
+  \@englishfalse
+  \@englishtrue
+  \PassOptionsToPackage{english}{babel}
+}
+
+\DeclareOption*{\PassOptionsToClass{\CurrentOption}{\templatetype}}
+\ProcessOptions\relax
+\LoadClass[]{\templatetype}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% PACKAGES %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\RequirePackage{amsmath} % Provides \nobreakdash (needed for some bib refs)
+\RequirePackage{amssymb} % needed for some bib refs
+\RequirePackage{array} % for tables content alignement
+\RequirePackage{babel} % Load babel (it will use the options passed above)
+\RequirePackage{booktabs} % provides table rules
+\RequirePackage{calc} % For length calculations
+\RequirePackage{dirtytalk}
+\RequirePackage{emoji}
+\RequirePackage{enumitem} % for description margin adjustment
+\RequirePackage{eso-pic}  % run stuff before anything (used to place the background before everything else)
+\RequirePackage[bottom]{footmisc}
+\RequirePackage{geometry}
+\RequirePackage{graphicx}
+\RequirePackage{ifthen}
+\RequirePackage{lastpage}
+\RequirePackage{letltxmacro} % For \LetLtxMacro
+\RequirePackage{lipsum}
+\RequirePackage{longtable}
+\RequirePackage{makecell}
+\RequirePackage{parskip}
+\RequirePackage{pgfplots}
+\RequirePackage{setspace}
+\RequirePackage[skins]{tcolorbox} %tikz overzoom for title picture
+\RequirePackage[absolute,overlay]{textpos}
+\RequirePackage{tikz}
+\RequirePackage{tikzpagenodes} % For accessing text area coordinates
+\RequirePackage{tipx}  % For phonetic symbols
+\RequirePackage{titlesec}
+\RequirePackage{tocloft}
+\RequirePackage{url}
+
+
+% https://tex.stackexchange.com/questions/157389/how-to-center-column-values-in-a-table
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+
+
+\usetikzlibrary{calc}
+\usetikzlibrary{colorbrewer}
+\usetikzlibrary{fadings}
+\usetikzlibrary{pgfplots.colorbrewer}
+\usetikzlibrary{pgfplots.colormaps}
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.misc}
+
+\pgfplotsset{compat=1.18}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% LANGUAGE SETUP %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Language-specific customizations
+
+\if@french
+  \addto\captionsfrench{%
+    \renewcommand{\contentsname}{Sommaire}%
+  }
+\fi
+\if@english
+  \addto\captionsenglish{%
+    \renewcommand{\contentsname}{Table of contents}%
+  }
+\fi
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% CUSTOM COMMANDS %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% add command to define subtitle
+\DeclareRobustCommand\subtitle[1]{\gdef\@subtitle{#1}}
+\subtitle{}
+
+% define the reporter and reporter email commands
+\newcommand{\reporter}[1]{\gdef\@reporter{#1}}
+\newcommand{\@reporter}{}
+\newcommand{\thereporter}{\@reporter}
+\newcommand{\reporteremail}[1]{\gdef\@reporteremail{#1}}
+\newcommand{\@reporteremail}{}
+\newcommand{\thereporteremail}{\@reporteremail}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% REFERENCES ON LAST PAGE %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Define commands to only cite labels defined in the document and ignore undefined labels
+% This allows to automatically hide hidden or removed figures and tables
+
+% Global variables to store results
+\newcommand{\@figresult}{}
+\newcommand{\@tabresult}{}
+
+% Command to build a list of existing references
+\newcommand{\buildreflist}[2]{%
+  \begingroup
+  \def\@reflist{}%
+  \def\@refcount{0}%
+  \@for\@temp:=#2\do{%
+    \@ifundefined{r@\@temp}{}{%
+      \ifx\@reflist\@empty
+        \edef\@reflist{\ref{\@temp}}%
+        \def\@refcount{1}%
+      \else
+        \edef\@reflist{\@reflist, \ref{\@temp}}%
+        \edef\@refcount{\the\numexpr\@refcount+1\relax}%
+      \fi
+    }%
+  }%
+  \ifx\@reflist\@empty
+    \xdef\@tempresult{}%
+  \else
+    \ifnum\@refcount>1
+      \xdef\@tempresult{#1s \@reflist}%
+    \else
+      \xdef\@tempresult{#1 \@reflist}%
+    \fi
+  \fi
+  \endgroup
+}
+
+% Check if any references exist
+\newif\if@hasrefs
+\newcommand{\checkrefsexist}[2]{%
+  \buildreflist{figure}{#1}%
+  \global\let\@figresult\@tempresult
+  \buildreflist{table}{#2}%
+  \global\let\@tabresult\@tempresult
+  %
+  \ifx\@figresult\@empty
+    \ifx\@tabresult\@empty
+      \@hasrefsfalse
+    \else
+      \@hasrefstrue
+    \fi
+  \else
+    \@hasrefstrue
+  \fi
+}
+
+% Combined command for figures and tables
+\newcommand{\figtabrefs}[2]{%
+  \buildreflist{figure}{#1}%
+  \global\let\@figresult\@tempresult
+  \buildreflist{table}{#2}%
+  \global\let\@tabresult\@tempresult
+  %
+  \ifx\@figresult\@empty
+    \ifx\@tabresult\@empty
+      \notusedinthisreport
+    \else
+      \@tabresult
+    \fi
+  \else
+    \ifx\@tabresult\@empty
+      \@figresult
+    \else
+      \@figresult~; \@tabresult
+    \fi
+  \fi
+}
+
+% Counter to track if any items were added
+\newcounter{descriptionitems}
+
+% Conditional item that only shows if references exist
+\newcommand{\conditionalitem}[3]{%
+  % #1 = item label
+  % #2 = figure references
+  % #3 = table references
+  \checkrefsexist{#2}{#3}%
+  \if@hasrefs
+    \stepcounter{descriptionitems}%
+    \item[#1] \figtabrefs{#2}{#3}%
+  \fi
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% FONT %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\RequirePackage{fontspec}
+\RequirePackage[default,oldstyle,scale=0.95]{opensans} %% Alternatively
+%% use the option 'defaultsans' instead of 'default' to replace the
+%% sans serif font only.
+
+% set title font series
+\newcommand{\titlefont}{\fontseries{l}}
+
+
+\DeclareRobustCommand\subtitle[1]{\gdef\@subtitle{#1}}
+\subtitle{}
+\DeclareRobustCommand\titledescription[1]{\gdef\@titledescription{#1}}
+\titledescription{}
+\DeclareRobustCommand\titlerightlogo[1]{\gdef\@titlerightlogo{#1}}
+\titlerightlogo{assets/logo.eps}
+\DeclareRobustCommand\titleleftlogo[1]{\gdef\@titleleftlogo{#1}}
+\titleleftlogo{assets/logo.eps}
+
+%% change table of content font
+\renewcommand{\cftsecfont}{\fontseries{sb}\selectfont}
+\renewcommand{\cftsecpagefont}{\fontseries{sb}\selectfont}
+\renewcommand{\cfttoctitlefont}{\sectiontitlecolor\LARGE\fontseries{b}\selectfont}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% MARGINS %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\geometry{
+  a4paper,
+  left=30mm,
+  right=30mm,
+  top=30mm,
+  bottom=30mm,
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% BULLET POINTS %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% set bullet points color
+\renewcommand{\labelitemi}{$\bulletpointcolor{\bullet}$}
+\renewcommand{\labelitemii}{$\bulletpointcolor{\cdot}$}
+\renewcommand{\labelitemiii}{$\bulletpointcolor{\diamond}$}
+\renewcommand{\labelitemiv}{$\bulletpointcolor{\ast}$}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% TITLE PAGE %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\DeclareRobustCommand\titlebackgroundpicture[1]{\gdef\@titlebackgroundpicture{#1}}
+\renewcommand*{\maketitle}{
+  \begin{titlepage}
+  %  \setcounter{page}{0}
+    \begin{tikzpicture}[remember picture, overlay, every node/.style={inner sep=0,outer sep=0}]
+      % left laser:
+      % left part of the shading
+      \shade[left color=titlepagegradientcolora, right color=titlepagegradientcolorb, shading angle=0](current page.north west) rectangle ([xshift=0.5\titlepagelaserwidth]current page.south west);
+      % The yshift=0.2cm and yshift=-0.2cm are here to fix an alignement bug
+      % right part of the shading with the fading on the right
+      \shade[left color=titlepagegradientcolora, right color=titlepagegradientcolorb, shading angle=0, path fading=east]([xshift=0.49\titlepagelaserwidth, yshift=0.2cm]current page.north west) rectangle ([xshift=\titlepagelaserwidth, yshift=-0.2cm]current page.south west);
+      % left part of the white shade
+      \fill[color=white, path fading=west]([xshift=0.22\titlepagelaserwidth, yshift=0.2cm]current page.north west) rectangle ([xshift=0.301\titlepagelaserwidth, yshift=-0.2cm]current page.south west);
+      % right part of the white shade
+      \fill[color=white, path fading=east]([xshift=0.299\titlepagelaserwidth, yshift=0.2cm]current page.north west) rectangle ([xshift=0.38\titlepagelaserwidth, yshift=-0.2cm]current page.south west);
+      % logo:
+      \node [anchor=north west, xshift=\logoxpos, yshift=\logoypos] (logo) at (current page.south west) {\includegraphics[width=\logomaxw, height=\logomaxh, keepaspectratio]{\classdir /logo.eps}};
+      % label:
+%      \node [anchor=north east, xshift=-\labelxpos, yshift=-\labelypos] (label) at (current page.north east) {\includegraphics[width=\labelmaxw, height=\labelmaxh, keepaspectratio]{\classdir /label-science-ouverte.pdf}};
+      \@ifundefined{titlepagelabellogo}{%
+        % Do nothing if \titlepageupperlogo is not defined
+      }{%
+        % Show the logo if \titlepageupperlogo is defined
+        \node [anchor=north east, xshift=-\labelxpos, yshift=-\labelypos] (label) at (current page.north east) {\includegraphics[width=\labelmaxw, height=\labelmaxh, keepaspectratio]{\classdir /\titlepagelabellogo}};
+      }
+      % date:
+      \node [anchor=south west, xshift=\datexshift, yshift=\dateyshift] (date) at (logo.north east){\datefontsize\fontseries{b}\selectfont\titlecolor \@date \par};
+      % title:
+      \node [anchor=south west, text width=\titletextwidth, xshift=\titlexshift, yshift=\titleyshift] (title) at (date.north west) {\scalebox{4}{\parbox{0.25\titletextwidth}{\titlefont\titlefontsize\selectfont\titlecolor\@title}} \par};
+      % title description:
+      \node [anchor=north west, text width=\titledescriptiontextwidth, xshift=\titledescriptionxshift, yshift=\titledescriptionyshift] (titledescription) at (logo.south east) {\titledescriptionfontsize\selectfont\titlecolor\raggedright \@titledescription \par};
+      % subtitle:
+      \node [text width=\subtitletextwidth] (subtitle) at (\subtitlexpos, \subtitleypos) {\subtitlefontsize\selectfont\titlecolor\raggedright \@subtitle \par};
+    \end{tikzpicture}
+  \end{titlepage}
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% LAST PAGE %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% define command to set the background of the last page
+\newcommand{\makelastpage}{
+  \begin{tikzpicture}[remember picture, overlay, every node/.style={inner sep=0,outer sep=0}]
+    % left laser:
+    % left part of the shading
+    \shade[left color=titlepagegradientcolora, right color=titlepagegradientcolorb, shading angle=0](current page.north east) rectangle ([xshift=-0.5\titlepagelaserwidth]current page.south east);
+    % The yshift=0.2cm and yshift=-0.2cm are here to fix an alignement bug
+    % right part of the shading with the fading on the right
+    \shade[left color=titlepagegradientcolora, right color=titlepagegradientcolorb, shading angle=0, path fading=west]([xshift=-0.49\titlepagelaserwidth, yshift=0.2cm]current page.north east) rectangle ([xshift=-\titlepagelaserwidth, yshift=-0.2cm]current page.south east);
+    % left part of the white shade
+    \fill[color=white, path fading=east]([xshift=-0.22\titlepagelaserwidth, yshift=0.2cm]current page.north east) rectangle ([xshift=-0.301\titlepagelaserwidth, yshift=-0.2cm]current page.south east);
+    % right part of the white shade
+    \fill[color=white, path fading=west]([xshift=-0.299\titlepagelaserwidth, yshift=0.2cm]current page.north east) rectangle ([xshift=-0.38\titlepagelaserwidth, yshift=-0.2cm]current page.south east);
+  \end{tikzpicture}
+  \thispagestyle{empty}
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% BACKGROUND %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Define a boolean variable to control the background
+\newboolean{backgroundenabled}
+\setboolean{backgroundenabled}{true} % Set to false to disable the background
+
+% Add the background to every page until running out of pages in the background page
+% reset titlepage environment to start page numbering on title page
+\renewenvironment{titlepage}
+  {\newpage\thispagestyle{empty}}
+  {\newpage}
+  % lualatex version
+  \AddToShipoutPictureBG{
+    \AtPageLowerLeft{
+      \saveimageresource{\classdir /background.pdf}
+      % if this is the last page of the document
+      \ifthenelse{\thepage = \pageref{LastPage}}
+        {
+          % no background but add the laser to the page
+          \makelastpage
+        }
+        {
+          \ifthenelse{\boolean{backgroundenabled}}
+          {
+            % check if it's the first page
+            \ifthenelse{\thepage = 1}
+              {
+                % do nothing on the first page
+              }
+              {
+                % calculate the page number in the background PDF
+                \pgfmathtruncatemacro{\bgpage}{mod(\thepage - 1, \the\lastsavedimageresourcepages) + 1}
+                % add background
+                \begin{tikzpicture}[remember picture,overlay,every node/.style={inner sep=0,outer sep=0}]
+                  \node[anchor=north west] at (current page.north west){\includegraphics[width=\paperwidth, page=\bgpage]{\classdir /background.pdf}};
+                \end{tikzpicture}
+              }
+          }
+          {} % do nothing if background is disabled
+        }
+    }
+  }
+
+
+%% PDFLaTeX previous layout version
+%\AddToShipoutPictureBG{
+%  \AtPageLowerLeft{
+%    \pdfximage{assets/background.pdf}
+%    \ifthenelse{\thepage > \the\pdflastximagepages}
+%      {}
+%      {\includegraphics[width=\paperwidth, page=\thepage]{assets/background.pdf}}
+%  }
+%}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% SECTIONS %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% set sections style
+\newcommand*\sectionlabel{}
+\titleformat{\section}
+  {\sectiontitlecolor\LARGE\fontseries{b}\selectfont} % Format of the section title
+  {\thesection} % Section number
+  {1em} % Space between the number and the title
+  {
+    \if\sectionsigntext0
+      % no text sign
+      % don't add the sign
+    \else
+      \begin{tikzpicture}[remember picture, overlay]
+        \node[draw=betabordercolor, fill=betabackgroundcolor, rounded corners=5pt, inner sep=5pt, anchor=south west, yshift=\baselineskip] {
+          \textcolor{betatextcolor}{\normalsize \sectionsigntext}
+        };
+      \end{tikzpicture}
+    \fi
+  } % Code before the title
+
+\titlespacing*{\section}
+  {0pt}
+  {4ex}
+  {1.7ex}
+
+\newcommand{\sectionsigntext}{}
+
+% redifine the section command to add optional parameter for beta version sign
+% s = star, O{0} = optional with default to 0, m = title
+\NewDocumentCommand{\extendedsection}{sO{0}m}{
+  \renewcommand{\sectionsigntext}{#2}
+  \IfBooleanTF{#1}{
+    \latexsection*{#3}
+  }{
+    \latexsection{#3}
+  }
+}
+
+\AtBeginDocument{
+  \LetLtxMacro{\latexsection}{\section}
+  \LetLtxMacro{\section}{\extendedsection}
+}
+
+% set subsections style
+\titleformat{\subsection}
+  {\sectiontitlecolor\Large\fontseries{b}\selectfont} % Format of the subsection title
+  {\thesubsection} % Subsection number
+  {0.8em} % Space between the number and the title
+  {} % Code before the title
+
+\titlespacing*{\subsection}
+  {0pt}
+  {2ex}
+  {.7ex}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% WATERMARK %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\@ifundefined{watermarktext}{%
+  % \watermarktext is not defined - do nothing
+}{%
+  % \watermarktext is defined, now check if it's empty
+  \ifx\watermarktext\empty
+    % \watermarktext is defined but empty - do nothing
+  \else
+    % \watermarktext is defined and not empty
+    % https://tex.stackexchange.com/questions/118939/add-watermark-that-overlays-the-images
+    \AddToHook{shipout/foreground}{
+      \begin{tikzpicture}[overlay, remember picture]
+      \node[rotate=45, scale=8] at (current page) {\addfontfeature{Color=gray,Opacity=0.1}\watermarktext};
+      \end{tikzpicture}    
+    }
+  \fi
+}
+
+
+% load hyperref after all other packages to avoid conflicts that make footnotes to point to the last page
+\RequirePackage{hyperref}
+% as orcidlink loads hyperref, loads it after hyperref
+\RequirePackage{orcidlink}

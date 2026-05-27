@@ -1,0 +1,213 @@
+% needed for the template to find the class dir when the class folder
+% is not stored in the same directory than the main tex file
+\def\classdir{../../dibiso}
+
+\input{names_and_macros}
+
+\documentclass[french, 11pt]{../../dibiso/biso}
+
+\title{Bilan \\ Science \\ Ouverte}
+
+\author{Direction des bibliothèques, de l’information et de la science ouverte}
+
+\date{Année \reportyear}
+
+\subtitle{\textbf{Laboratoire \labacronym} \\
+  \medskip
+  \labfullname
+}
+
+
+\reporter{Reporter Name}
+\reporteremail{reporter.email@example.com}
+
+
+
+\begin{document}
+
+\renewcommand{\arraystretch}{1.5}
+
+
+\maketitle
+
+\tableofcontents
+
+\pagebreak
+
+
+
+\section{Introduction}
+
+Ce BiSO (Bilan Science Ouverte) a pour objectif de suivre l'évolution des indicateurs clés liés aux productions scientifiques de votre unité. Ce document, principalement fondé sur les données de HAL, vous permettra de monitorer les actions de diffusion en vue de l'évaluation HCERES.
+
+L'analyse se concentre sur plusieurs éléments essentiels, tels que la productivité scientifique, la visibilité des publications et les collaborations internationales. En étudiant ces indicateurs, nous souhaitons mettre en
+lumière les atouts et les opportunités de l'unité tout en identifiant les secteurs nécessitant des améliorations.
+
+Ce bilan a également pour but de contextualiser les évolutions par rapport aux objectifs stratégiques de l'unité. Les données collectées seront analysées afin de formuler des recommandations pratiques visant à renforcer l'impact
+scientifique et académique de l'unité.
+
+Ce rapport sera élaboré chaque année et diffusé en interne au sein de votre laboratoire, dans le but de préparer au mieux la prochaine évaluation HCERES.
+
+
+
+\pagebreak
+
+\section{Liste des revues}
+
+{
+  \footnotesize
+  \input{figures/journals_table.tex}
+}
+
+\pagebreak
+
+\section{Liste des conférences}
+
+\begin{figure}[!h]
+  \includegraphics[width=\textwidth]{figures/conferences.pdf}
+  \centering
+  \caption{Conférences}
+  \label{fig_conferences}
+\end{figure}
+
+
+\pagebreak
+
+\section{Liste des chapitres}
+
+{
+  \footnotesize
+  \input{figures/chapters_table.tex}
+}
+
+
+\pagebreak
+
+\section{Typologie de la production scientifique}
+
+\begin{figure}[!h]
+  \includegraphics[width=\textwidth]{figures/document_types.pdf}
+  \centering
+  \caption{Types de documents}
+  \label{fig_doc_type}
+\end{figure}
+
+
+\pagebreak
+
+\section{Articles et Communication de congrès en accès libre} % Evolution sur une période de 5 ans (2020-2024)
+
+\begin{figure}[!h]
+  \includegraphics[width=\textwidth]{figures/open_access_works.pdf}
+  \caption{Statut des accès ouverts des travaux sur la période \oaworksperiod}
+  \label{fig_open_access_works}
+\end{figure}
+
+
+\pagebreak
+
+\section{Carte des collaborations internationales}
+
+{\collaborationsnb} collaborations parmi {\institutionsnb} institutions dans {\countriesnb} pays d'après la liste des articles avec un DOI dans HAL et les données de collaboration d'OpenAlex.
+
+\begin{figure}[!h]
+  \hspace{-.1\textwidth}\includegraphics[width=1.2\textwidth]{figures/collaborations_map.pdf}
+  \caption{Collaborations internationales hors France - Données : publications renseignées dans HAL avec un DOI en utilisant les métadonnées d'OpenAlex}
+  \label{fig_collab_map}
+\end{figure}
+
+\pagebreak
+
+\section{Carte des collaborations internationales - Focus sur l’Europe}
+
+\begin{figure}[!h]
+  \includegraphics[width=\textwidth]{figures/collaborations_map_europe.pdf}
+  \caption{Collaborations internationales hors France en 2024 - Zoom sur l'europe - Données : publications renseignées dans HAL avec un DOI en utilisant les métadonnées d'OpenAlex}
+  \label{fig_collab_map_europe}
+\end{figure}
+
+\pagebreak
+
+\section{Collaborations internationales par établissements}
+
+\begin{figure}[!h]
+  \includegraphics[width=\textwidth]{figures/international_collaborations.pdf}
+  \caption{Collaborations internationales hors France en 2024 - Données : Nom des institutions renseignées dans HAL}
+  \label{fig_collab_names}
+\end{figure}
+
+\pagebreak
+
+\section{Collaborations (non académique) avec le secteur privé}
+
+
+\pagebreak
+
+\section{Publications liées à des projets européens}
+
+\begin{figure}[!h]
+  \includegraphics[width=.8\textwidth]{figures/eu_projects.pdf}
+  \centering
+  \caption{Projets Européens}
+  \label{fig_eu_projects}
+\end{figure}
+
+
+
+\section{Publications liées à des projets ANR}
+
+\begin{figure}[!h]
+  \includegraphics[width=.8\textwidth]{figures/anr_projects.pdf}
+  \centering
+  \caption{Projets ANR}
+  \label{fig_anr_projects}
+\end{figure}
+
+
+\pagebreak
+
+\section{Données - jeux de données partagés}
+
+
+
+\section{Logiciels partagés}
+
+
+
+\section{Cahiers de laboratoire partagés}
+
+
+
+
+\pagebreak
+
+\section{Les atouts du Laboratoire dans son engagement pour la science ouverte}
+
+\begin{itemize}
+  \item Publications dans des revues variées, favorisant la bibliodiversité.
+  \item Très bonne prise en main de HAL par les chercheurs, pour un archivage et un Open access qui suit les prérogatives du CNRS. Les notices sont globalement bien renseignées avec des notices complètes et des affiliations complètes.
+  \item Des projets ANR visibles et repérés dans HAL
+  \item Formation et accompagnement des doctorants sur l’année (création 21 IdHAL)
+  \item Une demi-journée dédiée aux données de la recherche en mars 2025 (échanges sur les données de la recherche dans des ateliers organisés par la DiBISO)
+\end{itemize}
+
+
+\section{Préconisations, pour aller plus loin}
+
+\begin{itemize}
+  \item Nouveauté : il est possible d’indiquer les jeux de données dans les liens HAL \say{champs ressource liée = on peut indiquer le DOI de jeux de données}
+  \item Faire monter le taux de PDF, texte intégral disponible, pour faire avancer la lecture des publications.
+\end{itemize}
+
+\vfill
+
+\paragraph{Rappel :} la loi pour la République Numérique permet aux auteurs travaillant dans une institution publique en France depuis 2016, de partager le postprint sur HAL, avec un embargo de 6 mois pour les disciplines STM et 1 an pour les SHS.
+
+Des formations, des accompagnements peuvent être proposées par votre référent recherche pour guider les chercheurs. 
+
+
+
+
+\makelastpagereport
+ 
+\end{document}

@@ -1,0 +1,37 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: DiBISO LaTeX templates
+type: software
+authors:
+  - given-names: 'Romain, François'
+    family-names: Thomas
+    email: contact@romainthomas.net
+    affiliation: Université Paris-Saclay
+    orcid: 'https://orcid.org/0009-0008-9900-1930'
+  - given-names: Henri
+    family-names: Bretel
+    affiliation: Université Paris-Saclay
+    orcid: 'https://orcid.org/0000-0001-6922-0915'
+  - given-names: Delphine
+    family-names: Le Piolet
+    orcid: 'https://orcid.org/0000-0001-9756-4408'
+    affiliation: Université Paris-Saclay
+  - given-names: Laili
+    family-names: Rahimie
+    orcid: 'https://orcid.org/0009-0007-7119-215X'
+    affiliation: Université Paris-Saclay
+  - given-names: Robin
+    family-names: Millman
+    orcid: 'https://orcid.org/0009-0006-9124-2065'
+    affiliation: Université Paris-Saclay
+repository-code: 'https://github.com/dibiso-upsaclay/dibiso-latex-templates'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.17251825
+abstract: >-
+  LaTeX templates used by the DiBISO at the Université
+  Paris-Saclay to generate reports.
+keywords:
+  - latex

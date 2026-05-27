@@ -1,0 +1,67 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%                                             %%%%%%%%%%
+%%%%%%%%%%  You can reuse this work under:             %%%%%%%%%%
+%%%%%%%%%%  CC-BY-4.0 OR  etalab-2.0                   %%%%%%%%%%
+%%%%%%%%%%                                             %%%%%%%%%%
+%%%%%%%%%%  Henri Bretel, Delphine Le Piolet,          %%%%%%%%%%
+%%%%%%%%%%  Laili Rahimie, Romain Thomas ; 2025        %%%%%%%%%%
+%%%%%%%%%%                                             %%%%%%%%%%
+%%%%%%%%%%  science.ouverte@universite-paris-saclay.fr %%%%%%%%%%
+%%%%%%%%%%  DiBISO - Université Paris-Saclay           %%%%%%%%%%
+%%%%%%%%%%                                             %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%% needed for the template to find the class dir when the class folder
+%% is not stored in the same directory than the main tex file
+%\def\classdir{dibiso}
+
+\input{names_and_macros}
+
+\documentclass[french, 11pt]{dibiso/biso}
+
+\usepackage{biblatex}
+
+% Increase the space between bibliography entries
+\setlength{\bibitemsep}{6pt}
+
+
+\addbibresource{figures/works_bibtex.bib}
+
+\title{Bilan \\ Science \\ Ouverte}
+
+\author{Direction des bibliothèques, de l'information et de la science ouverte}
+
+\date{Année \reportyear}
+
+\subtitle{\textbf{Laboratoire \labacronym} \\
+  \medskip
+  \labfullname
+}
+
+\titledescription{\textbf{\Large Liste des travaux} \\
+  \medskip
+  \large Ce document contient la liste des travaux de {\reportyear} de la collection HAL \texttt{\halcollectionid} au {\datafetchdate},
+  utilisés pour réaliser le Bilan de la Science Ouverte.
+}
+
+
+\begin{document}
+
+\maketitle
+
+
+\nocite{*} % include all entries from references.bib
+
+{
+  \footnotesize
+  \printbibliography
+}
+
+\medskip
+
+\worksbibtexinfo
+
+\makelastpagebiblio
+ 
+\end{document}

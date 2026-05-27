@@ -1,0 +1,69 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%                                             %%%%%%%%%%
+%%%%%%%%%%  You can reuse this work under:             %%%%%%%%%%
+%%%%%%%%%%  CC-BY-4.0 OR  etalab-2.0                   %%%%%%%%%%
+%%%%%%%%%%                                             %%%%%%%%%%
+%%%%%%%%%%  Henri Bretel, Delphine Le Piolet,          %%%%%%%%%%
+%%%%%%%%%%  Laili Rahimie, Romain Thomas ; 2025        %%%%%%%%%%
+%%%%%%%%%%                                             %%%%%%%%%%
+%%%%%%%%%%  science.ouverte@universite-paris-saclay.fr %%%%%%%%%%
+%%%%%%%%%%  DiBISO - Université Paris-Saclay           %%%%%%%%%%
+%%%%%%%%%%                                             %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%% needed for the template to find the class dir when the class folder
+%% is not stored in the same directory than the main tex file
+%\def\classdir{dibiso}
+
+\input{names_and_macros}
+
+\documentclass[french, 11pt]{dibiso/pubpart}
+
+\usepackage{biblatex}
+
+% Increase the space between bibliography entries
+\setlength{\bibitemsep}{6pt}
+
+
+% TODO
+%\addbibresource{figures/works_bibtex.bib}
+
+\title{Publications \\ \& \\ Partenariats}
+
+% not used
+%\author{}
+
+\date{\reportyear}
+
+\subtitle{\textbf{\entitiesacronym} \\
+  \medskip
+  \entitiesfullname
+}
+
+\titledescription{\textbf{\Large Liste des travaux} \\
+  \medskip
+  \large Ce document contient la liste des co-publications de {\entitiesfullname} pour la période {\reportyear} au {\datafetchdate},
+  utilisés pour réaliser le rapport Publications \& Partenariats.
+}
+
+
+\begin{document}
+
+\maketitle
+
+
+\nocite{*} % include all entries from references.bib
+
+{
+  \footnotesize
+  \printbibliography
+}
+
+\medskip
+
+%\worksbibtexinfo
+
+\makelastpagebiblio
+ 
+\end{document}

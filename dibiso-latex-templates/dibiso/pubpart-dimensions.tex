@@ -1,0 +1,176 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%                                    %%%%%%%%%%
+%%%%%%%%%%  You can reuse this work under:    %%%%%%%%%%
+%%%%%%%%%%  LPPL-1.3c OR GPL-3.0-only         %%%%%%%%%%
+%%%%%%%%%%                                    %%%%%%%%%%
+%%%%%%%%%%  Romain THOMAS 2025                %%%%%%%%%%
+%%%%%%%%%%  contact@romainthomas.net          %%%%%%%%%%
+%%%%%%%%%%  DiBISO - Université Paris-Saclay  %%%%%%%%%%
+%%%%%%%%%%                                    %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% LENGTHS %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\setlength{\parindent}{0pt} % Remove paragraph indentation
+\setlength{\parskip}{1em}   % Add vertical space between paragraphs
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% TITLE PAGE %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Title
+% Title position relative to the top of the page
+\newlength{\titleyshift}
+\setlength{\titleyshift}{0.5cm}
+
+% Title position relative to the left of the page
+\newlength{\titlexshift}
+\setlength{\titlexshift}{0cm}
+
+% Width of the title text zone
+\newlength{\titletextwidth}
+\setlength{\titletextwidth}{12cm}
+
+% Title font size (scaled by a 400% factor)
+\newcommand{\titlefontsize}{\fontsize{15}{13}}
+
+
+%% Date
+% date position shift relative to subtitle
+\newlength{\datexshift}
+\setlength{\datexshift}{0cm}
+\newlength{\dateyshift}
+\setlength{\dateyshift}{0.5cm}
+
+% date round corner radius
+\newlength{\datecornerradius} % vertical
+\setlength{\datecornerradius}{0.3cm}
+
+% date border width
+\newlength{\dateborderwidth}
+\setlength{\dateborderwidth}{0.08cm}
+
+% Date font size
+\newcommand{\datefontsize}{\fontsize{15}{21}}
+
+
+%% Subtitle
+% Subtitle max text width
+\newlength{\subtitletextwidth}
+\setlength{\subtitletextwidth}{8cm}
+
+% Subtitle x position
+\newlength{\subtitlexpos}
+\setlength{\subtitlexpos}{12cm}
+
+% Subtitle y position
+\newlength{\subtitleypos}
+\setlength{\subtitleypos}{-20cm}
+
+% Subtitle font size
+\newcommand{\subtitlefontsize}{\fontsize{15}{21}}
+
+
+%% Title description
+% Title description max text width
+\newlength{\titledescriptiontextwidth}
+\setlength{\titledescriptiontextwidth}{11cm}
+
+% Title description x shift
+\newlength{\titledescriptionxshift}
+\setlength{\titledescriptionxshift}{0cm}
+
+% Title description y shift
+\newlength{\titledescriptionyshift}
+\setlength{\titledescriptionyshift}{-1.5cm}
+
+% Title description font size
+\newcommand{\titledescriptionfontsize}{\fontsize{15}{21}}
+
+
+%% Logo
+% Max width of the logo
+\newlength{\logomaxw}
+\setlength{\logomaxw}{5cm}
+
+% Max heigh of the logo
+\newlength{\logomaxh}
+\setlength{\logomaxh}{5cm}
+
+% Logo position relative to the left of the page (anchor left)
+\newlength{\logoxpos}
+\setlength{\logoxpos}{16mm}
+
+% Logo position relative to the bottom of the page (anchor top)
+\newlength{\logoypos}
+\setlength{\logoypos}{159mm}
+
+
+%% Label
+% Max width of the label
+\newlength{\labelmaxw}
+\setlength{\labelmaxw}{30mm}
+
+% Max heigh of the label
+\newlength{\labelmaxh}
+\setlength{\labelmaxh}{30mm}
+
+% Label position relative to the right of the page (anchor right)
+\newlength{\labelxpos}
+\setlength{\labelxpos}{10mm}
+
+% Logo position relative to the top of the page (anchor top)
+\newlength{\labelypos}
+\setlength{\labelypos}{10mm}
+
+
+%% Logo rule
+% Logo upper rule shift
+\newlength{\logoruleshift}
+\setlength{\logoruleshift}{0.1cm}
+
+% Logo upper rule width
+\newlength{\logorulewidth}
+\setlength{\logorulewidth}{0.08cm}
+
+% Logo upper rule length
+\newlength{\logorulelength}
+\setlength{\logorulelength}{\logomaxw}
+
+
+%% Author
+% Author y position shift
+\newlength{\authoryposshift}
+\setlength{\authoryposshift}{0.5cm}
+
+% Author text width
+\newlength{\authortextwidth}
+\setlength{\authortextwidth}{\logomaxw}
+
+% Author font size
+\newcommand{\authorfontsize}{\fontsize{14}{20}}
+
+
+%% Laser
+% Laser width
+\newlength{\titlepagelaserwidth}
+\setlength{\titlepagelaserwidth}{15mm}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% SECTIONS %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Section before separation space
+\newlength{\sectionbeforesep}
+\setlength{\sectionbeforesep}{4ex}
+
+% Section after separation space
+\newlength{\sectionaftersep}
+\setlength{\sectionaftersep}{2ex}
+
+
