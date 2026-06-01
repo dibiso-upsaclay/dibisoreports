@@ -20,19 +20,21 @@ Deux modes sont disponibles : **Docker** (recommandé pour la production) et **d
 
 ```
 dibisoreports/
-├── dibiso-html-templates/   ← Templates Jinja2 HTML
+├── docker-compose.yml       ← Point d'entrée unique (API + webapp)
+├── .env.template            ← Configuration consolidée
+├── dibiso-html-templates/   ← Templates Jinja2 HTML (monté en lecture seule)
 │   └── dibiso-html/
 ├── dibiso-reporting-api/    ← FastAPI backend
 │   ├── app/
 │   │   ├── main.py          ← Point d'entrée API
 │   │   ├── auth.py          ← JWT authentification
 │   │   └── users.py         ← Gestion utilisateurs (SQLite)
-│   ├── docker-compose.yml
+│   ├── docker-compose.yml   ← Compose autonome (usage avancé)
 │   ├── Dockerfile
 │   └── .env.template
 ├── dibiso-reporting-webapp/ ← React frontend
 │   ├── src/App.jsx          ← Composant unique
-│   ├── docker-compose.yml
+│   ├── docker-compose.yml   ← Compose autonome (usage avancé)
 │   ├── Dockerfile
 │   └── .env.template
 ├── dibisoreporting/         ← Bibliothèque Python locale
@@ -43,10 +45,10 @@ dibisoreports/
 
 ## 2. Déploiement Docker (recommandé)
 
-### 2.1 Configurer l'API
+### 2.1 Configurer
 
 ```bash
-cd dibiso-reporting-api
+# Depuis la racine du dépôt
 cp .env.template .env
 ```
 
@@ -57,12 +59,8 @@ ADMIN_USERNAME=admin
 ADMIN_PASSWORD=<mot_de_passe>
 SECRET_KEY=<générer avec: python -c "import secrets; print(secrets.token_hex(64))">
 
-# Volumes Docker (chemins sur l'hôte)
-USERS_DATABASE_DIRECTORY=/chemin/vers/api_data
-OPENALEX_ANALYSIS_CACHE_PATH=/chemin/vers/openalex-cache
-
-# Templates HTML — pointer vers le dossier parent de dibiso-html/
-HTML_TEMPLATE_PATH=/chemin/vers/dibiso-html-templates
+# URL de l'API telle qu'elle est accessible depuis le navigateur
+VITE_API_URL=http://127.0.0.1:8000
 
 # ScanR
 SCANR_API_PASSWORD=<mot_de_passe>
@@ -74,40 +72,29 @@ SCANR_PUBLICATIONS_INDEX=scanr-publications
 # OpenAlex
 OPENALEX_API_KEY=<clé_api>
 OPENALEX_EMAIL=<email>
-
-# CORS — inclure l'URL du frontend
-CORS_ALLOW_ORIGINS=http://localhost:8080,https://reporting.example.com
 ```
 
-### 2.2 Configurer le frontend
+Les autres variables ont des valeurs par défaut adaptées à un déploiement local.
+Si le frontend et l'API sont exposés sur des ports ou domaines différents, ajuster
+`API_PORT`, `WEBAPP_PORT` et `CORS_ALLOW_ORIGINS` en conséquence.
+
+### 2.2 Démarrer les services
 
 ```bash
-cd dibiso-reporting-webapp
-cp .env.template .env
+# Depuis la racine du dépôt
+docker compose up -d --build
 ```
 
-```dotenv
-VITE_API_URL=http://127.0.0.1:8000   # URL de l'API accessible depuis le navigateur
-WEBAPP_PORT=127.0.0.1:8080
-```
+Les deux services démarrent ensemble. Le frontend attend que le healthcheck de l'API
+soit passé avant de démarrer.
 
-### 2.3 Démarrer les services
+- Interface : **http://localhost:8080** (ou `WEBAPP_PORT`)
+- API : **http://localhost:8000** (ou `API_PORT`)
 
-```bash
-# API
-cd dibiso-reporting-api
-docker-compose up -d
-
-# Frontend (dans un autre terminal)
-cd dibiso-reporting-webapp
-docker-compose up -d
-```
-
-L'interface est accessible sur **http://localhost:8080** (ou le port configuré dans `WEBAPP_PORT`).
-
-Au 1er démarrage de l'API :
-- La base SQLite est créée dans le volume `USERS_DATABASE_DIRECTORY`
+Au 1er démarrage :
+- La base SQLite est créée dans le volume Docker `api_data`
 - L'utilisateur admin est créé automatiquement (depuis `ADMIN_USERNAME`/`ADMIN_PASSWORD`)
+- Les templates HTML sont lus depuis `./dibiso-html-templates` (monté en lecture seule)
 
 Vérification :
 

@@ -1,0 +1,68 @@
+name: ${COMPOSE_PROJECT_NAME:-dibiso-reporting}
+
+services:
+
+  api:
+    container_name: ${COMPOSE_PROJECT_NAME:-dibiso-reporting}-api
+    build:
+      context: .
+      dockerfile: dibiso-reporting-api/Dockerfile
+    volumes:
+      - api_data:/api_data
+      - openalex_cache:/openalex_analysis_cache
+      - ./dibiso-html-templates:/html_templates:ro
+    ports:
+      - ${API_PORT:-127.0.0.1:8000}:8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    environment:
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - SECRET_KEY=${SECRET_KEY}
+      - ACCESS_TOKEN_EXPIRE_HOURS=${ACCESS_TOKEN_EXPIRE_HOURS:-48}
+      - USERS_DATABASE_NAME=${USERS_DATABASE_NAME:-users.db}
+      - USERS_DATABASE_DIRECTORY=/api_data
+      - PROJECTS_PERSISTENCE_TIME_HOURS=${PROJECTS_PERSISTENCE_TIME_HOURS:-4}
+      - PROJECTS_ANALYSES_RETENTION_DAYS=${PROJECTS_ANALYSES_RETENTION_DAYS:-30}
+      - HTML_TEMPLATE_PATH=/html_templates
+      - HTML_TEMPLATE_URL=${HTML_TEMPLATE_URL:-https://github.com/dibiso-upsaclay/dibiso-html-templates/releases/latest}
+      - DEFAULT_MAX_ENTITIES=${DEFAULT_MAX_ENTITIES:-500}
+      - CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS:-http://127.0.0.1:8080,http://localhost:8080}
+      - CORS_ALLOW_CREDENTIALS=${CORS_ALLOW_CREDENTIALS:-true}
+      - CORS_ALLOW_METHODS=${CORS_ALLOW_METHODS:-*}
+      - CORS_ALLOW_HEADERS=${CORS_ALLOW_HEADERS:-*}
+      - THREAD_POOL_MAX_WORKERS=${THREAD_POOL_MAX_WORKERS:-4}
+      - DATA_FETCHING_TIMEOUT_SECONDS=${DATA_FETCHING_TIMEOUT_SECONDS:-1200}
+      - API_TITLE=${API_TITLE:-DiBISOreport generator API}
+      - API_VERSION=${API_VERSION:-0.1.0}
+      - SCANR_API_PASSWORD=${SCANR_API_PASSWORD}
+      - SCANR_API_URL=${SCANR_API_URL}
+      - SCANR_API_USERNAME=${SCANR_API_USERNAME}
+      - SCANR_BSO_INDEX=${SCANR_BSO_INDEX}
+      - SCANR_PUBLICATIONS_INDEX=${SCANR_PUBLICATIONS_INDEX}
+      - OPENALEX_ANALYSIS_CACHE_PATH=/openalex_analysis_cache
+      - OPENALEX_API_KEY=${OPENALEX_API_KEY}
+      - OPENALEX_EMAIL=${OPENALEX_EMAIL}
+
+  webapp:
+    container_name: ${COMPOSE_PROJECT_NAME:-dibiso-reporting}-webapp
+    build:
+      context: dibiso-reporting-webapp
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://127.0.0.1:8000}
+    ports:
+      - ${WEBAPP_PORT:-127.0.0.1:8080}:8080
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  api_data:
+  openalex_cache:
