@@ -300,6 +300,7 @@ class DibisoReporting:
                 params.setdefault("max_entities", self.max_entities)
                 params.setdefault("max_plotted_entities", self.max_plotted_entities)
                 params.setdefault("main_color", self.plot_main_color)
+                params.setdefault("language", getattr(self, "language", "fr"))
 
                 viz = viz_class(**params, **self.kwargs)
                 stats = viz.fetch_data()

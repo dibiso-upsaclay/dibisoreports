@@ -146,11 +146,11 @@ nav.toc li {
 }
 
 nav.toc li a {
-  color: var(--text);
+  color: var(--primary);
   text-decoration: none;
 }
 
-nav.toc li a:hover { color: var(--primary); }
+nav.toc li a:hover { text-decoration: underline; }
 
 /* ── Sections ────────────────────────────────────────── */
 section {
