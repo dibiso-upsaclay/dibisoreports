@@ -6,6 +6,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL}
     ports:
       - ${WEBAPP_PORT}:8080
     deploy:

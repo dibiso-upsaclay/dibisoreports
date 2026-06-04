@@ -4,9 +4,9 @@
 
 {% block report_title %}Bilan<br>Science<br>Ouverte{% endblock %}
 
-{% block title_description %}
-  Rapport annuel {{ reportyear | default('') }} — {{ labacronym | default('') }}
-{% endblock %}
+{% block title_date %}Année {{ reportyear | default('') }}{% endblock %}
+
+{% block title_subtitle %}<strong>Laboratoire {{ labacronym | default('') }}</strong>{% if labfullname is defined and labfullname %}<br>{{ labfullname }}{% endif %}{% endblock %}
 
 {% block title_label %}
   <img class="title-page-label" src="assets/label-science-ouverte.svg" alt="Science Ouverte">

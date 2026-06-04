@@ -67,6 +67,7 @@ class PubPart(DibisoReporting):
             plot_main_color: str | None = None,
             root_path: str | None = None,
             watermark_text: str = "",
+            language: str = "fr",
             **kwargs
     ):
         """
@@ -106,6 +107,8 @@ class PubPart(DibisoReporting):
         :type root_path: str
         :param watermark_text: The text to be used as a watermark in the report. Default to "" (no watermark).
         :type watermark_text: str
+        :param language: BCP 47 language tag for the HTML report (e.g. "fr", "en"). Default "fr".
+        :type language: str
         """
 
         super().__init__(
@@ -125,6 +128,7 @@ class PubPart(DibisoReporting):
         self.entities_acronym = entities_acronym
         self.entities_full_name = entities_full_name
         self.watermark_text = watermark_text
+        self.language = language
 
         self.data_fetch_date = datetime.now().strftime("%d/%m/%Y")
 
@@ -182,6 +186,7 @@ class PubPart(DibisoReporting):
                 viz["secondary_entity_filter_field"] = self.secondary_entity_filter_field
 
         self.macros_variables["report_type"] = "pubpart"
+        self.macros_variables["language"] = self.language
         self.macros_variables["reportyear"] = str(self.year)
         self.macros_variables["entitiesacronym"] = self.entities_acronym
         self.macros_variables["entitiesfullname"] = self.entities_full_name

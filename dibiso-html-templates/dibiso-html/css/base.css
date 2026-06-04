@@ -35,19 +35,25 @@ header.title-page::before {
   position: absolute;
   left: 0; top: 0; bottom: 0;
   width: var(--laser-width);
-  background: linear-gradient(to right, var(--gradient-a), var(--gradient-b));
+  background:
+    /* White shine: transparent → white → transparent at ~22–38% of laser width */
+    linear-gradient(to right, transparent 22%, rgba(255,255,255,0.7) 30%, transparent 38%),
+    /* Gradient fades to transparent on the right edge (matching LaTeX path fading=east) */
+    linear-gradient(to right, var(--gradient-a) 0%, var(--gradient-b) 50%, transparent 100%);
 }
 
-.title-page-content {
-  padding: 20mm 20mm 20mm calc(var(--laser-width) + 10mm);
-}
-
+/* Logo: middle-left, matching LaTeX logoxpos=16mm, logoypos=159mm (→ 138mm from top) */
 .title-page-logo {
-  max-height: 50px;
-  max-width: 150px;
-  margin-bottom: 40mm;
+  position: absolute;
+  left: 17mm;
+  top: 138mm;
+  max-width: 50mm;
+  max-height: 40mm;
+  width: auto;
+  height: auto;
 }
 
+/* Label: top-right corner, matching LaTeX labelxpos/labelypos=10mm */
 .title-page-label {
   position: absolute;
   top: 10mm;
@@ -56,25 +62,44 @@ header.title-page::before {
   max-width: 30mm;
 }
 
-.report-title {
-  font-size: 22pt;
+/* Date/year: just above logo, aligned with logo right edge (logo left 17mm + max-width 50mm = 67mm) */
+.title-page-date {
+  position: absolute;
+  left: 67mm;
+  top: 115mm;
+  font-size: 15pt;
   font-weight: 700;
   color: var(--primary);
-  line-height: 1.2;
-  margin-bottom: 8mm;
+  white-space: nowrap;
 }
 
+/* Title: large light font, left-aligned with date (logo right edge = 67mm) */
+.report-title {
+  position: absolute;
+  left: 67mm;
+  top: 22mm;
+  width: 120mm;
+  font-size: 65pt;
+  font-weight: 300;
+  color: var(--primary);
+  line-height: 1.0;
+  margin: 0;
+}
+
+/* Subtitle (lab/entity name): right portion of page, lower half, matching LaTeX subtitlexpos/ypos */
 .report-subtitle {
-  font-size: 11pt;
-  color: var(--text-light);
-  margin-bottom: 6mm;
-  max-width: 80mm;
+  position: absolute;
+  left: 110mm;
+  top: 168mm;
+  width: 85mm;
+  font-size: 13pt;
+  font-weight: 400;
+  color: var(--primary);
+  line-height: 1.5;
 }
 
-.report-description {
-  font-size: 10pt;
-  color: var(--text-light);
-  max-width: 110mm;
+.report-subtitle strong {
+  font-weight: 700;
 }
 
 /* Watermark */
@@ -276,7 +301,11 @@ footer.last-page::before {
   position: absolute;
   right: 0; top: 0; bottom: 0;
   width: var(--laser-width);
-  background: linear-gradient(to left, var(--gradient-a), var(--gradient-b));
+  background:
+    /* White shine mirrored: transparent → white → transparent at ~22–38% from right edge */
+    linear-gradient(to left, transparent 22%, rgba(255,255,255,0.7) 30%, transparent 38%),
+    /* Gradient fades to transparent on the left edge (matching LaTeX path fading=west) */
+    linear-gradient(to left, var(--gradient-a) 0%, var(--gradient-b) 50%, transparent 100%);
 }
 
 .last-page-content {

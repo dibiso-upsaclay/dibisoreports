@@ -42,7 +42,7 @@ packages = ["dibisoplot", "dibisoplot.biso", "dibisoplot.pubpart"]
 version = { attr = "dibisoplot._version.__version__" }
 
 [tool.setuptools.package-data]
-myModule = ["dibisoplot/biso/HAL_doc_types_names.toml"]
+dibisoplot = ["HAL_doc_types_names.toml"]
 
 [project.urls]
 Homepage = "https://pypi.org/project/dibisoplot/"

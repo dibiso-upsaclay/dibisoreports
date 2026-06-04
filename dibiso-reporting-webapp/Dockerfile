@@ -12,7 +12,9 @@ COPY postcss.config.js postcss.config.js
 COPY tailwind.config.js tailwind.config.js
 COPY vite.config.js vite.config.js
 COPY src src
-COPY .env .env
+
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 
 RUN npm run build
 

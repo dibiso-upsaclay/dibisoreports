@@ -142,6 +142,7 @@ class Biso(DibisoReporting):
             reporter: str = "",
             reporter_email: str = "",
             watermark_text: str = "",
+            language: str = "fr",
             **kwargs
     ):
         """
@@ -176,6 +177,8 @@ class Biso(DibisoReporting):
         :type reporter_email: str
         :param watermark_text: The text to be used as a watermark in the report. Default to "" (no watermark).
         :type watermark_text: str
+        :param language: BCP 47 language tag for the HTML report (e.g. "fr", "en"). Default "fr".
+        :type language: str
         """
 
         super().__init__(
@@ -196,6 +199,7 @@ class Biso(DibisoReporting):
         self.reporter = reporter
         self.reporter_email = reporter_email
         self.watermark_text = watermark_text
+        self.language = language
 
         self.data_fetch_date = datetime.now().strftime("%d/%m/%Y")
 
@@ -255,6 +259,7 @@ class Biso(DibisoReporting):
             logging.warning(f"Collection ID {self.entity_id} does not exist in HAL.")
 
         self.macros_variables["report_type"] = "biso"
+        self.macros_variables["language"] = self.language
         self.macros_variables["reportyear"] = str(self.year)
         self.macros_variables["halcollectionid"] = self.entity_id
         self.macros_variables["labacronym"] = self.entity_acronym

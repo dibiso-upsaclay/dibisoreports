@@ -14,12 +14,10 @@
 
 {# ── Title page ──────────────────────────────────────────────── #}
 <header class="title-page">
-  <div class="title-page-content">
-    <img class="title-page-logo" src="assets/logo.svg" alt="Université Paris-Saclay">
-    <h1 class="report-title">{% block report_title %}Rapport{% endblock %}</h1>
-    <p class="report-subtitle">{{ labacronym | default('') }}{% if labfullname is defined and labfullname %} — {{ labfullname }}{% endif %}</p>
-    <p class="report-description">{% block title_description %}{% endblock %}</p>
-  </div>
+  <img class="title-page-logo" src="assets/logo.svg" alt="Université Paris-Saclay">
+  <div class="title-page-date">{% block title_date %}{% endblock %}</div>
+  <h1 class="report-title">{% block report_title %}Rapport{% endblock %}</h1>
+  <div class="report-subtitle">{% block title_subtitle %}{% endblock %}</div>
   {% block title_label %}{% endblock %}
 </header>
 

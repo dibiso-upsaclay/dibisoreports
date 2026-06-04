@@ -2,7 +2,10 @@
 
 {% block report_type_label %}Publications &amp; Partenariats{% endblock %}
 {% block report_title %}Publications<br>&amp;<br>Partenariats{% endblock %}
-{% block title_description %}Rapport {{ reportyear | default('') }} — {{ entitiesacronym | default('') }}{% endblock %}
+
+{% block title_date %}{{ reportyear | default('') }}{% endblock %}
+
+{% block title_subtitle %}<strong>{{ entitiesacronym | default('') }}</strong>{% if entitiesfullname is defined and entitiesfullname %}<br>{{ entitiesfullname }}{% endif %}{% endblock %}
 {% block toc_entries %}
   {% if figures.topics_collaborations is defined %}<li><span>Principales thématiques de recherche</span></li>{% endif %}
   {% if figures.topics_potential_collaborations is defined %}<li><span>Potentiel de collaboration identifié</span></li>{% endif %}
