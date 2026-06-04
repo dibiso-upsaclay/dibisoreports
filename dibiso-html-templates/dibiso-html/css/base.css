@@ -135,17 +135,22 @@ nav.toc h2 {
 }
 
 nav.toc ol {
-  list-style: none;
-  padding: 0;
+  list-style: decimal;
+  padding-left: 5mm;
 }
 
 nav.toc li {
-  display: flex;
-  justify-content: space-between;
   border-bottom: 1px dotted var(--border);
   padding: 1mm 0;
   font-size: 10pt;
 }
+
+nav.toc li a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+nav.toc li a:hover { color: var(--primary); }
 
 /* ── Sections ────────────────────────────────────────── */
 section {
@@ -256,6 +261,25 @@ div.analysis ul, div.analysis ol {
   padding-left: 5mm;
   margin-bottom: 2mm;
 }
+
+/* ── Legend box (tcolorbox equivalent) ──────────────────── */
+div.dibiso-legend {
+  border: 1px solid var(--border);
+  border-radius: 3mm;
+  padding: 3mm 4mm;
+  margin: 3mm 0;
+  font-size: 9.5pt;
+}
+
+div.dibiso-legend dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1mm 4mm;
+  margin: 0;
+}
+
+div.dibiso-legend dt { font-weight: 700; white-space: nowrap; }
+div.dibiso-legend dd { margin: 0; }
 
 /* ── Info / warning blocks ───────────────────────────── */
 p.dibiso-info {

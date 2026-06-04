@@ -123,18 +123,19 @@ process_lock = threading.Lock()
 # Section registry per report type
 REPORT_SECTIONS: Dict[str, list] = {
     "biso": [
-        {"id": "works_type",                    "label": "Typologie de la production scientifique"},
         {"id": "journals_hal",                  "label": "Liste des revues (HAL)"},
-        {"id": "journals",                      "label": "Revues et voies d'accès"},
         {"id": "conferences",                   "label": "Liste des conférences"},
         {"id": "chapters",                      "label": "Liste des chapitres"},
+        {"id": "works_type",                    "label": "Typologie de la production scientifique"},
         {"id": "open_access_works",             "label": "Articles en accès ouvert"},
-        {"id": "collaboration_map_world",       "label": "Carte des collaborations mondiales"},
+        {"id": "journals",                      "label": "Revues et voies d'accès (BSO)"},
+        {"id": "collaboration_map_world",       "label": "Carte des collaborations internationales"},
         {"id": "collaboration_map_europe",      "label": "Carte des collaborations européennes"},
         {"id": "collaboration_names",           "label": "Collaborations par établissements"},
         {"id": "private_sector_collaborations", "label": "Collaborations secteur privé"},
         {"id": "european_projects",             "label": "Projets européens"},
         {"id": "anr_projects",                  "label": "Projets ANR"},
+        {"id": "data",           "label": "Jeux de données partagés","figure": False},
         {"id": "strengths",      "label": "Atouts du laboratoire",  "figure": False},
         {"id": "recommendations","label": "Préconisations",         "figure": False},
     ],
