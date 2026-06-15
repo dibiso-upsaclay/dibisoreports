@@ -22,7 +22,7 @@ from contextlib import asynccontextmanager
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Annotated
+from typing import Optional, Dict, Annotated, Literal
 # from starlette.requests import Request
 from starlette.responses import JSONResponse
 
@@ -36,6 +36,7 @@ scanr_api_password = os.getenv("SCANR_API_PASSWORD")
 scanr_api_url = os.getenv("SCANR_API_URL")
 scanr_api_username = os.getenv("SCANR_API_USERNAME")
 scanr_bso_index = os.getenv("SCANR_BSO_INDEX")
+scanr_bso_version = os.getenv("SCANR_BSO_VERSION", "2025Q4")
 scanr_publications_index = os.getenv("SCANR_PUBLICATIONS_INDEX")
 projects_persistence_time_hours = int(os.getenv("PROJECTS_PERSISTENCE_TIME_HOURS"))
 analyses_retention_days = int(os.getenv("PROJECTS_ANALYSES_RETENTION_DAYS", "30"))
@@ -111,6 +112,7 @@ class ReportRequest(BaseModel):
     max_entities: int = Field(..., ge=1, le=10000, description="Max entities to use for maps")
     reporter: str = Field("", description="Name of the person writing the report")
     reporter_email: str = Field("", description="Email of the reporter")
+    template_variant: Literal["classic", "basic"] = Field("classic", description="Visual template variant")
 
 thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=int(os.getenv("THREAD_POOL_MAX_WORKERS")))
 
@@ -698,13 +700,15 @@ def render_html_to_pdf(project_dir: Path, output_dir: Path, comp_id: str) -> lis
                        "HTML files will be available but no PDF will be generated. "
                        "Install the GTK3 runtime (see README_RUN.md) to enable PDF export.")
         # Inline CSS/assets so the HTML is self-contained for the webapp preview and ZIP
+        _tsubdir = _get_template_subdir(project_dir)
         for name in ("report", "biblio"):
             html_path = project_dir / f"{name}.html"
             if html_path.exists():
-                inlined = _inline_assets_in_html(html_path.read_text(encoding="utf-8"), project_dir)
+                inlined = _inline_assets_in_html(html_path.read_text(encoding="utf-8"), project_dir, _tsubdir)
                 (output_dir / f"{name}.html").write_text(inlined, encoding="utf-8")
         return [None, None]
 
+    _tsubdir = _get_template_subdir(project_dir)
     results = []
     for name, progress in [("report", 80), ("biblio", 88)]:
         html_path = project_dir / f"{name}.html"
@@ -717,16 +721,16 @@ def render_html_to_pdf(project_dir: Path, output_dir: Path, comp_id: str) -> lis
         update_compilation_status(comp_id, progress, f"Converting {name}.html to PDF...")
         try:
             pdf_path = output_dir / f"{name}.pdf"
-            # Inline CSS/assets before WeasyPrint: CSS lives in project_dir/dibiso-html/css/
+            # Inline CSS/assets before WeasyPrint: CSS lives in project_dir/{template_subdir}/css/
             # but the HTML references it as css/base.css (relative to project_dir root), so
             # WeasyPrint can't resolve it via filename=. Inlining also makes output_dir/report.html
             # self-contained so the webapp preview renders correctly on the first load.
-            inlined = _inline_assets_in_html(html_path.read_text(encoding="utf-8"), project_dir)
+            inlined = _inline_assets_in_html(html_path.read_text(encoding="utf-8"), project_dir, _tsubdir)
             inlined_html_path = output_dir / f"{name}.html"
             inlined_html_path.write_text(inlined, encoding="utf-8")
             WeasyprintHTML(filename=str(inlined_html_path)).write_pdf(str(pdf_path), presentational_hints=True)
             if html_template_path:
-                bg_path = Path(html_template_path) / "dibiso-html" / "assets" / "background.pdf"
+                bg_path = Path(html_template_path) / _tsubdir / "assets" / "background.pdf"
                 apply_background_to_pdf(pdf_path, bg_path)
             results.append(pdf_path)
         except Exception as e:
@@ -784,12 +788,14 @@ def generate_report_project(comp_id: str, request_data: ReportRequest) -> Option
         _scanr_url = _json.dumps(str(scanr_api_url))
         _scanr_user = _json.dumps(str(scanr_api_username))
         _scanr_bso = _json.dumps(str(scanr_bso_index))
+        _scanr_bso_ver = _json.dumps(str(scanr_bso_version))
         _scanr_pub = _json.dumps(str(scanr_publications_index))
         _acronym = _json.dumps(request_data.entity_acronym)
         _fullname = _json.dumps(request_data.entity_full_name)
         _entity_id = _json.dumps(request_data.entity_id)
         _reporter = _json.dumps(request_data.reporter)
         _reporter_email = _json.dumps(request_data.reporter_email)
+        _template_variant = _json.dumps(request_data.template_variant)
         process = subprocess.Popen([
             sys.executable, '-c',
             f'''
@@ -823,7 +829,11 @@ biso_reporting = Biso(
     scanr_api_url={_scanr_url},
     scanr_api_username={_scanr_user},
     scanr_bso_index={_scanr_bso},
+    scanr_bso_version={_scanr_bso_ver},
     scanr_publications_index={_scanr_pub},
+)
+biso_reporting.macros_variables["template_subdir"] = (
+    "dibiso-html-basic" if {_template_variant} == "basic" else "dibiso-html"
 )
 biso_reporting.generate_report()
             '''
@@ -1322,13 +1332,24 @@ def _convert_svg_style_to_attrs(html_content: str) -> str:
     return _re.sub(r'<svg\b.*?</svg>', process_svg_block, html_content, flags=_re.DOTALL)
 
 
-def _inline_assets_in_html(html_content: str, project_dir: Path) -> str:
+def _get_template_subdir(project_dir: Path) -> str:
+    """Read the template subdirectory name from the project's context.json."""
+    ctx_path = project_dir / "context.json"
+    if ctx_path.exists():
+        try:
+            return json.loads(ctx_path.read_text(encoding="utf-8")).get("template_subdir", "dibiso-html")
+        except Exception:
+            pass
+    return "dibiso-html"
+
+
+def _inline_assets_in_html(html_content: str, project_dir: Path, template_subdir: str = "dibiso-html") -> str:
     """Replace CSS <link> tags with inline <style> blocks and image src with base64 data URIs."""
     import base64
     import re as _re
-    template_dir = project_dir / "dibiso-html"
+    template_dir = project_dir / template_subdir
     # Fallback to global template mount so assets added after project generation still inline
-    global_template_dir = (Path(html_template_path) / "dibiso-html") if html_template_path else None
+    global_template_dir = (Path(html_template_path) / template_subdir) if html_template_path else None
 
     def _resolve(relative: str) -> Path | None:
         # Prefer global mount (always current) over project copy (may be stale from generation time)
@@ -1398,11 +1419,12 @@ def _do_export(comp_id: str, user_id: int, project_dir: Path, output_dir: Path):
         logger.warning(f"Could not save analyses.json for {comp_id}: {e}")
 
     # Step 2: Inline CSS+assets → self-contained HTML in output dir
+    _tsubdir = _get_template_subdir(project_dir)
     html_urls = {}
     for name in ("report", "biblio"):
         html_path = project_dir / f"{name}.html"
         if html_path.exists():
-            inlined = _inline_assets_in_html(html_path.read_text(encoding="utf-8"), project_dir)
+            inlined = _inline_assets_in_html(html_path.read_text(encoding="utf-8"), project_dir, _tsubdir)
             out_path = output_dir / f"{name}.html"
             out_path.write_text(inlined, encoding="utf-8")
             html_urls[name] = f"/download-html?temp_id={comp_id}&file_name={name}"
@@ -1419,7 +1441,7 @@ def _do_export(comp_id: str, user_id: int, project_dir: Path, output_dir: Path):
                 pdf_path = output_dir / f"{name}.pdf"
                 WeasyprintHTML(filename=str(inlined_path)).write_pdf(str(pdf_path), presentational_hints=True)
                 if html_template_path:
-                    bg_path = Path(html_template_path) / "dibiso-html" / "assets" / "background.pdf"
+                    bg_path = Path(html_template_path) / _tsubdir / "assets" / "background.pdf"
                     apply_background_to_pdf(pdf_path, bg_path)
                 pdf_urls[name] = f"/download-pdf?temp_id={comp_id}&file_name={name}"
             except Exception as e:

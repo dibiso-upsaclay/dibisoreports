@@ -80,6 +80,10 @@ const TRANSLATIONS = {
     reporterEmail: "Contact email",
     reporterEmailDescription: "Email address shown on the last page. Optional.",
     reporterEmailPlaceholder: "e.g., firstname.lastname@example.fr",
+    templateVariantLabel: "Template",
+    templateVariantDescription: "Visual style of the report.",
+    templateVariantClassic: "Paris-Saclay (Classic)",
+    templateVariantBasic: "Basic (Generic)",
 
     starting: "Starting...",
     compiling: "Compiling...",
@@ -229,6 +233,10 @@ const TRANSLATIONS = {
     reporterEmail: "Email référent·e",
     reporterEmailDescription: "Adresse email affichée sur la dernière page. Optionnel.",
     reporterEmailPlaceholder: "ex. prenom.nom@exemple.fr",
+    templateVariantLabel: "Modèle",
+    templateVariantDescription: "Style visuel du rapport.",
+    templateVariantClassic: "Paris-Saclay (Classique)",
+    templateVariantBasic: "Basique (Générique)",
 
     starting: "Démarrage...",
     compiling: "Génération...",
@@ -329,7 +337,8 @@ const ReportGeneratorInterface = () => {
     entityId: '',
     maxEntities: 1000,
     reporter: '',
-    reporterEmail: ''
+    reporterEmail: '',
+    templateVariant: 'classic'
   });
   // Form state for login and registration
   const [loginData, setLoginData] = useState({
@@ -906,7 +915,8 @@ const ReportGeneratorInterface = () => {
           entity_id: formData.entityId,
           max_entities: formData.maxEntities,
           reporter: formData.reporter,
-          reporter_email: formData.reporterEmail
+          reporter_email: formData.reporterEmail,
+          template_variant: formData.templateVariant
         })
       });
       if (!response.ok) {
@@ -1910,6 +1920,25 @@ const ReportGeneratorInterface = () => {
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                     placeholder={tr.reporterEmailPlaceholder}
                   />
+                </div>
+                {/* Template variant */}
+                <div>
+                  <label htmlFor="templateVariant" className="block text-sm font-medium text-gray-300 mb-2">
+                    {tr.templateVariantLabel}
+                    <span className="text-gray-500 font-light"> <br/>
+                      {tr.templateVariantDescription}
+                    </span>
+                  </label>
+                  <select
+                    id="templateVariant"
+                    name="templateVariant"
+                    value={formData.templateVariant}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  >
+                    <option value="classic">{tr.templateVariantClassic}</option>
+                    <option value="basic">{tr.templateVariantBasic}</option>
+                  </select>
                 </div>
               </div>
             </div>

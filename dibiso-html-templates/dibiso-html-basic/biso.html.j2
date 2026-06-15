@@ -1,0 +1,233 @@
+{% extends "base.html.j2" %}
+
+{% block report_type_label %}Bilan Science Ouverte{% endblock %}
+
+{% block report_title %}Bilan<br>Science<br>Ouverte{% endblock %}
+
+{% block title_date %}Année {{ reportyear | default('') }}{% endblock %}
+
+{% block title_subtitle %}<strong>Laboratoire {{ labacronym | default('') }}</strong>{% if labfullname is defined and labfullname %}<br>{{ labfullname }}{% endif %}{% endblock %}
+
+{% block title_label %}{% endblock %}
+
+{% block toc_entries %}
+  <li><a href="#introduction">Introduction</a></li>
+  {% if figures.journals_hal is defined %}<li><a href="#journals-hal">Liste des revues</a></li>{% endif %}
+  {% if figures.conferences is defined %}<li><a href="#conferences">Liste des conférences</a></li>{% endif %}
+  {% if figures.chapters is defined %}<li><a href="#chapters">Liste des chapitres</a></li>{% endif %}
+  {% if figures.works_type is defined %}<li><a href="#works-type">Typologie de la production scientifique</a></li>{% endif %}
+  {% if figures.open_access_works is defined %}<li><a href="#open-access-works">Articles en accès ouvert</a></li>{% endif %}
+  {% if figures.journals is defined %}<li><a href="#journals">Revues et voies d'accès ouvert (BSO)</a></li>{% endif %}
+  {% if figures.collaboration_map_world is defined %}<li><a href="#collaboration-map-world">Carte des collaborations internationales</a></li>{% endif %}
+  {% if figures.collaboration_map_europe is defined %}<li><a href="#collaboration-map-europe">Carte des collaborations européennes</a></li>{% endif %}
+  {% if figures.collaboration_names is defined %}<li><a href="#collaboration-names">Collaborations internationales par établissements</a></li>{% endif %}
+  {% if figures.private_sector_collaborations is defined %}<li><a href="#private-sector">Collaborations avec le secteur privé</a></li>{% endif %}
+  {% if figures.european_projects is defined %}<li><a href="#european-projects">Publications liées à des projets européens</a></li>{% endif %}
+  {% if figures.anr_projects is defined %}<li><a href="#anr-projects">Publications liées à des projets ANR</a></li>{% endif %}
+  <li><a href="#data">Jeux de données partagés</a></li>
+  <li><a href="#strengths">Atouts du laboratoire</a></li>
+  <li><a href="#recommendations">Préconisations</a></li>
+{% endblock %}
+
+{% block main_content %}
+
+{# ── 1. Introduction ─────────────────────────────────────────── #}
+<section id="introduction">
+  <h2>Introduction</h2>
+  <h3>Méthodologie et objectifs</h3>
+  <p>Le BiSO est un bilan science ouverte établi à partir des publications présentes dans HAL. Il est produit sur l'année n&nbsp;−&nbsp;1 à l'automne afin de permettre une plus grande exhaustivité des dépôts référencés dans la collection HAL du laboratoire.</p>
+  {% if halcollectionid is defined and halcollectionid %}<p>Sauf mention particulière, les données utilisées pour les graphiques proviennent de la collection HAL <code>{{ halcollectionid }}</code> et de l'année {{ reportyear | default('') }}.</p>{% endif %}
+  <h3>Calendrier annuel</h3>
+  <ol>
+    <li>Printemps&nbsp;: Le Référent recherche SO envoie une liste des publications manquantes dans HAL au DU du laboratoire.</li>
+    <li>Été&nbsp;: les chercheurs et doctorants sont invités à déposer les publications manquantes dans HAL, idéalement en déposant le texte intégral (version postprint) ou à défaut les notices bibliographiques.</li>
+    <li>Automne&nbsp;: votre référent recherche produit le BiSO et le communique au DU du laboratoire.</li>
+  </ol>
+  <p>Ce bilan est proposé pour donner un aperçu annuel des atouts SO du laboratoire, en présentant une liste exhaustive des revues, conférences, collaborations et taux d'accès ouvert accompagné d'un relevé des actions en faveur de la science ouverte, et de propositions d'amélioration.</p>
+  <p>Ce document est à l'attention des directeurs, directrices, et toute personne du laboratoire qui participe activement aux actions de développement de la Science Ouverte. Communiqué seulement en interne, il permet aux référents recherche de vous présenter des données HAL, préalablement nettoyées, avec la participation des chercheurs pour les dépôts, afin de refléter au mieux la production scientifique. Remis chaque année, le BiSO vise également à vous aider à anticiper la préparation de rapports (ex&nbsp;: HCERES).</p>
+  <h3>Déposer dans une archive ouverte</h3>
+  <p>La loi pour la République Numérique permet aux auteurs travaillant dans une institution publique en France depuis 2016, de partager le postprint sur HAL, avec un embargo de 6&nbsp;mois pour les disciplines STM et 1&nbsp;an pour les SHS.</p>
+</section>
+
+{# ── 2. Liste des revues (HAL) ───────────────────────────────── #}
+{% if figures.journals_hal is defined %}
+<section id="journals-hal">
+  <h2>Liste des revues</h2>
+  {{ figures.journals_hal | safe }}
+  {% if journalshalinfo is defined and journalshalinfo %}<p class="dibiso-info">{{ journalshalinfo }}</p>{% endif %}
+  {% if analyses.journals_hal is defined and analyses.journals_hal %}
+  <div class="analysis">{{ analyses.journals_hal | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── 3. Liste des conférences ────────────────────────────────── #}
+{% if figures.conferences is defined %}
+<section id="conferences">
+  <h2>Liste des conférences</h2>
+  {{ figures.conferences | safe }}
+  {% if conferencesinfo is defined and conferencesinfo %}<p class="dibiso-info">{{ conferencesinfo }}</p>{% endif %}
+  {% if analyses.conferences is defined and analyses.conferences %}
+  <div class="analysis">{{ analyses.conferences | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── 4. Liste des chapitres ──────────────────────────────────── #}
+{% if figures.chapters is defined %}
+<section id="chapters">
+  <h2>Liste des chapitres</h2>
+  {{ figures.chapters | safe }}
+  {% if chaptersinfo is defined and chaptersinfo %}<p class="dibiso-info">{{ chaptersinfo }}</p>{% endif %}
+  {% if analyses.chapters is defined and analyses.chapters %}
+  <div class="analysis">{{ analyses.chapters | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── 5. Typologie ────────────────────────────────────────────── #}
+{% if figures.works_type is defined %}
+<section id="works-type">
+  <h2>Typologie de la production scientifique</h2>
+  {{ figures.works_type | safe }}
+  {% if workstype_info is defined and workstype_info %}<p class="dibiso-info">{{ workstype_info }}</p>{% endif %}
+  {% if analyses.works_type is defined and analyses.works_type %}
+  <div class="analysis">{{ analyses.works_type | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── 6. Articles en accès ouvert ─────────────────────────────── #}
+{% if figures.open_access_works is defined %}
+<section id="open-access-works">
+  <h2>Articles et Communications de congrès en accès ouvert</h2>
+  {{ figures.open_access_works | safe }}
+  {% if openaccessworksinfo is defined and openaccessworksinfo %}<p class="dibiso-info">{{ openaccessworksinfo }}</p>{% endif %}
+  <div class="dibiso-legend">
+    <dl>
+      <dt>TI dans HAL</dt><dd>PDF librement accessible pour tous sur l'archive ouverte HAL</dd>
+      <dt>OA Hors HAL</dt><dd>PDF disponible sur les sites éditeurs, ou sur une archive ouverte autre que HAL, dépôt à l'étranger, disciplinaire tel qu'Arxiv, Pubmed, etc.</dd>
+      <dt>Accès fermé</dt><dd>Notice seule sur HAL. En l'absence d'abonnement à la revue, les lecteurs n'ont pas accès au contenu.</dd>
+    </dl>
+  </div>
+  {% if analyses.open_access_works is defined and analyses.open_access_works %}
+  <div class="analysis">{{ analyses.open_access_works | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── 7. Revues et voies d'accès (BSO) ───────────────────────── #}
+{% if figures.journals is defined %}
+<section id="journals">
+  <h2>Revues et voies d'accès ouvert (BSO)</h2>
+  {{ figures.journals | safe }}
+  {% if bsojournalsinfo is defined and bsojournalsinfo %}<p class="dibiso-info">{{ bsojournalsinfo }}</p>{% endif %}
+  {% if analyses.journals is defined and analyses.journals %}
+  <div class="analysis">{{ analyses.journals | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── 8. Carte des collaborations internationales ─────────────── #}
+{% if figures.collaboration_map_world is defined %}
+<section id="collaboration-map-world">
+  <h2>Carte des collaborations internationales</h2>
+  {{ figures.collaboration_map_world | safe }}
+  {% if collaborationmapworldinfo is defined and collaborationmapworldinfo %}<p class="dibiso-info">{{ collaborationmapworldinfo }}</p>{% endif %}
+  {% if analyses.collaboration_map_world is defined and analyses.collaboration_map_world %}
+  <div class="analysis">{{ analyses.collaboration_map_world | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── 9. Carte des collaborations européennes ─────────────────── #}
+{% if figures.collaboration_map_europe is defined %}
+<section id="collaboration-map-europe">
+  <h2>Carte des collaborations européennes</h2>
+  {{ figures.collaboration_map_europe | safe }}
+  {% if collaborationmapeuropeinfo is defined and collaborationmapeuropeinfo %}<p class="dibiso-info">{{ collaborationmapeuropeinfo }}</p>{% endif %}
+  {% if analyses.collaboration_map_europe is defined and analyses.collaboration_map_europe %}
+  <div class="analysis">{{ analyses.collaboration_map_europe | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── 10. Collaborations par établissements ───────────────────── #}
+{% if figures.collaboration_names is defined %}
+<section id="collaboration-names">
+  <h2>Collaborations internationales par établissements</h2>
+  {{ figures.collaboration_names | safe }}
+  {% if collaborationnamesinfo is defined and collaborationnamesinfo %}<p class="dibiso-info">{{ collaborationnamesinfo }}</p>{% endif %}
+  {% if analyses.collaboration_names is defined and analyses.collaboration_names %}
+  <div class="analysis">{{ analyses.collaboration_names | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── 11. Collaborations secteur privé ────────────────────────── #}
+{% if figures.private_sector_collaborations is defined %}
+<section id="private-sector">
+  <h2>Collaborations avec le secteur privé</h2>
+  {{ figures.private_sector_collaborations | safe }}
+  {% if privatesectorcollaborationsinfo is defined and privatesectorcollaborationsinfo %}<p class="dibiso-info">{{ privatesectorcollaborationsinfo }}</p>{% endif %}
+  {% if analyses.private_sector_collaborations is defined and analyses.private_sector_collaborations %}
+  <div class="analysis">{{ analyses.private_sector_collaborations | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── 12. Projets européens ───────────────────────────────────── #}
+{% if figures.european_projects is defined %}
+<section id="european-projects">
+  <h2>Publications liées à des projets européens</h2>
+  {{ figures.european_projects | safe }}
+  {% if europeanprojectsinfo is defined and europeanprojectsinfo %}<p class="dibiso-info">{{ europeanprojectsinfo }}</p>{% endif %}
+  {% if analyses.european_projects is defined and analyses.european_projects %}
+  <div class="analysis">{{ analyses.european_projects | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── 13. Projets ANR ─────────────────────────────────────────── #}
+{% if figures.anr_projects is defined %}
+<section id="anr-projects">
+  <h2>Publications liées à des projets ANR</h2>
+  {{ figures.anr_projects | safe }}
+  {% if anrprojectsinfo is defined and anrprojectsinfo %}<p class="dibiso-info">{{ anrprojectsinfo }}</p>{% endif %}
+  {% if analyses.anr_projects is defined and analyses.anr_projects %}
+  <div class="analysis">{{ analyses.anr_projects | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── 14. Jeux de données partagés ────────────────────────────── #}
+<section id="data">
+  <h2>Jeux de données partagés</h2>
+  {% if analyses.data is defined and analyses.data %}
+  <div class="analysis">{{ analyses.data | safe }}</div>
+  {% else %}
+  <p class="dibiso-info"><em>Section à compléter.</em></p>
+  {% endif %}
+</section>
+
+{# ── 15. Atouts du laboratoire ───────────────────────────────── #}
+<section id="strengths">
+  <h2>Atouts du laboratoire</h2>
+  {% if analyses.strengths is defined and analyses.strengths %}
+  <div class="analysis">{{ analyses.strengths | safe }}</div>
+  {% else %}
+  <p class="dibiso-info"><em>Section à compléter.</em></p>
+  {% endif %}
+</section>
+
+{# ── 16. Préconisations ──────────────────────────────────────── #}
+<section id="recommendations">
+  <h2>Préconisations</h2>
+  {% if analyses.recommendations is defined and analyses.recommendations %}
+  <div class="analysis">{{ analyses.recommendations | safe }}</div>
+  {% else %}
+  <p class="dibiso-info"><em>Section à compléter.</em></p>
+  {% endif %}
+</section>
+
+{% endblock %}

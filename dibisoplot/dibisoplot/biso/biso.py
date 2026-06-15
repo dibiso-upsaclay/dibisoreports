@@ -61,7 +61,7 @@ class Biso(Dibisoplot):
             scanr_api_url: str | None = None,
             scanr_api_username: str | None = None,
             scanr_bso_index: str | None = None,
-            scanr_bso_version: str = "2024Q4",
+            scanr_bso_version: str = "2025Q4",
             scanr_chunk_size: int = 50,
             scanr_publications_index: str | None = None,
             template: str = "simple_white",

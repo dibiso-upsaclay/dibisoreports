@@ -219,7 +219,7 @@ class DibisoReporting:
         context["analyses"] = analyses
         context["has_plotly_figures"] = False  # SVG path: no Plotly JS needed
 
-        template_dir = join(root_path, "dibiso-html")
+        template_dir = join(root_path, context.get("template_subdir", "dibiso-html"))
         env = Environment(loader=FileSystemLoader(template_dir), autoescape=True)
         report_type = context.get("report_type", "biso")
         template_name = f"{report_type}.html.j2"

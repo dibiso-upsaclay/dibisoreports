@@ -1,0 +1,79 @@
+{% extends "base.html.j2" %}
+
+{% block report_type_label %}Publications &amp; Partenariats{% endblock %}
+{% block report_title %}Publications<br>&amp;<br>Partenariats{% endblock %}
+
+{% block title_date %}{{ reportyear | default('') }}{% endblock %}
+
+{% block title_subtitle %}<strong>{{ entitiesacronym | default('') }}</strong>{% if entitiesfullname is defined and entitiesfullname %}<br>{{ entitiesfullname }}{% endif %}{% endblock %}
+{% block toc_entries %}
+  {% if figures.topics_collaborations is defined %}<li><span>Principales thématiques de recherche</span></li>{% endif %}
+  {% if figures.topics_potential_collaborations is defined %}<li><span>Potentiel de collaboration identifié</span></li>{% endif %}
+  {% if figures.institutions_lineage_collaborations is defined %}<li><span>Top 25 structures internes</span></li>{% endif %}
+  {% if figures.works_collaborations_normalized is defined %}<li><span>Top 25 co-publications (citations normalisées)</span></li>{% endif %}
+  {% if figures.works_collaborations_count is defined %}<li><span>Top 25 co-publications (citations)</span></li>{% endif %}
+  <li><span>Analyse</span></li>
+{% endblock %}
+
+{% block main_content %}
+
+{% if figures.topics_collaborations is defined %}
+<section id="topics-collaborations">
+  <h2>Principales thématiques de recherche</h2>
+  {{ figures.topics_collaborations | safe }}
+  {% if analyses.topics_collaborations is defined and analyses.topics_collaborations %}
+  <div class="analysis">{{ analyses.topics_collaborations | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if figures.topics_potential_collaborations is defined %}
+<section id="topics-potential">
+  <h2>Potentiel de collaboration identifié</h2>
+  {{ figures.topics_potential_collaborations | safe }}
+  {% if analyses.topics_potential_collaborations is defined and analyses.topics_potential_collaborations %}
+  <div class="analysis">{{ analyses.topics_potential_collaborations | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if figures.institutions_lineage_collaborations is defined %}
+<section id="institutions">
+  <h2>Top 25 structures internes</h2>
+  {{ figures.institutions_lineage_collaborations | safe }}
+  {% if analyses.institutions_lineage_collaborations is defined and analyses.institutions_lineage_collaborations %}
+  <div class="analysis">{{ analyses.institutions_lineage_collaborations | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if figures.works_collaborations_normalized is defined %}
+<section id="works-citations-normalized">
+  <h2>Top 25 co-publications par citations normalisées</h2>
+  {{ figures.works_collaborations_normalized | safe }}
+  {% if analyses.works_collaborations_normalized is defined and analyses.works_collaborations_normalized %}
+  <div class="analysis">{{ analyses.works_collaborations_normalized | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if figures.works_collaborations_count is defined %}
+<section id="works-citations-count">
+  <h2>Top 25 co-publications par citations</h2>
+  {{ figures.works_collaborations_count | safe }}
+  {% if analyses.works_collaborations_count is defined and analyses.works_collaborations_count %}
+  <div class="analysis">{{ analyses.works_collaborations_count | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+<section id="analysis">
+  <h2>Analyse</h2>
+  {% if analyses.analysis is defined and analyses.analysis %}
+  <div class="analysis">{{ analyses.analysis | safe }}</div>
+  {% else %}
+  <p class="dibiso-info"><em>Section à compléter.</em></p>
+  {% endif %}
+</section>
+
+{% endblock %}
