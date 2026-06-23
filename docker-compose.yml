@@ -55,7 +55,7 @@ services:
       context: dibiso-reporting-webapp
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=${VITE_API_URL:-http://127.0.0.1:8003}
+        - VITE_API_URL=${VITE_API_URL:-http://127.0.0.1:8000}
         - VITE_BASE=${VITE_BASE:-/}
     ports:
       - ${WEBAPP_PORT:-127.0.0.1:8080}:8080
