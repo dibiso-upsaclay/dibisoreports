@@ -1,4 +1,5 @@
 {% extends "base.html.j2" %}
+{% set removed_sections = removed_sections | default([]) %}
 
 {% block report_type_label %}Bilan Science Ouverte{% endblock %}
 
@@ -12,21 +13,21 @@
 
 {% block toc_entries %}
   <li><a href="#introduction">Introduction</a></li>
-  {% if figures.journals_hal is defined %}<li><a href="#journals-hal">Liste des revues</a></li>{% endif %}
-  {% if figures.conferences is defined %}<li><a href="#conferences">Liste des conférences</a></li>{% endif %}
-  {% if figures.chapters is defined %}<li><a href="#chapters">Liste des chapitres</a></li>{% endif %}
-  {% if figures.works_type is defined %}<li><a href="#works-type">Typologie de la production scientifique</a></li>{% endif %}
-  {% if figures.open_access_works is defined %}<li><a href="#open-access-works">Articles en accès ouvert</a></li>{% endif %}
-  {% if figures.journals is defined %}<li><a href="#journals">Revues et voies d'accès ouvert (BSO)</a></li>{% endif %}
-  {% if figures.collaboration_map_world is defined %}<li><a href="#collaboration-map-world">Carte des collaborations internationales</a></li>{% endif %}
-  {% if figures.collaboration_map_europe is defined %}<li><a href="#collaboration-map-europe">Carte des collaborations européennes</a></li>{% endif %}
-  {% if figures.collaboration_names is defined %}<li><a href="#collaboration-names">Collaborations internationales par établissements</a></li>{% endif %}
-  {% if figures.private_sector_collaborations is defined %}<li><a href="#private-sector">Collaborations avec le secteur privé</a></li>{% endif %}
-  {% if figures.european_projects is defined %}<li><a href="#european-projects">Publications liées à des projets européens</a></li>{% endif %}
-  {% if figures.anr_projects is defined %}<li><a href="#anr-projects">Publications liées à des projets ANR</a></li>{% endif %}
-  <li><a href="#data">Jeux de données partagés</a></li>
-  <li><a href="#strengths">Atouts du laboratoire</a></li>
-  <li><a href="#recommendations">Préconisations</a></li>
+  {% if figures.journals_hal is defined and 'journals_hal' not in removed_sections %}<li><a href="#journals-hal">Liste des revues</a></li>{% endif %}
+  {% if figures.conferences is defined and 'conferences' not in removed_sections %}<li><a href="#conferences">Liste des conférences</a></li>{% endif %}
+  {% if figures.chapters is defined and 'chapters' not in removed_sections %}<li><a href="#chapters">Liste des chapitres</a></li>{% endif %}
+  {% if figures.works_type is defined and 'works_type' not in removed_sections %}<li><a href="#works-type">Typologie de la production scientifique</a></li>{% endif %}
+  {% if figures.open_access_works is defined and 'open_access_works' not in removed_sections %}<li><a href="#open-access-works">Articles en accès ouvert</a></li>{% endif %}
+  {% if figures.journals is defined and 'journals' not in removed_sections %}<li><a href="#journals">Revues et voies d'accès ouvert (BSO)</a></li>{% endif %}
+  {% if figures.collaboration_map_world is defined and 'collaboration_map_world' not in removed_sections %}<li><a href="#collaboration-map-world">Carte des collaborations internationales</a></li>{% endif %}
+  {% if figures.collaboration_map_europe is defined and 'collaboration_map_europe' not in removed_sections %}<li><a href="#collaboration-map-europe">Carte des collaborations européennes</a></li>{% endif %}
+  {% if figures.collaboration_names is defined and 'collaboration_names' not in removed_sections %}<li><a href="#collaboration-names">Collaborations internationales par établissements</a></li>{% endif %}
+  {% if figures.private_sector_collaborations is defined and 'private_sector_collaborations' not in removed_sections %}<li><a href="#private-sector">Collaborations avec le secteur privé</a></li>{% endif %}
+  {% if figures.european_projects is defined and 'european_projects' not in removed_sections %}<li><a href="#european-projects">Publications liées à des projets européens</a></li>{% endif %}
+  {% if figures.anr_projects is defined and 'anr_projects' not in removed_sections %}<li><a href="#anr-projects">Publications liées à des projets ANR</a></li>{% endif %}
+  {% if 'data' not in removed_sections %}<li><a href="#data">Jeux de données partagés</a></li>{% endif %}
+  {% if 'strengths' not in removed_sections %}<li><a href="#strengths">Atouts du laboratoire</a></li>{% endif %}
+  {% if 'recommendations' not in removed_sections %}<li><a href="#recommendations">Préconisations</a></li>{% endif %}
 {% endblock %}
 
 {% block main_content %}
@@ -50,8 +51,8 @@
 </section>
 
 {# ── 2. Liste des revues (HAL) ───────────────────────────────── #}
-{% if figures.journals_hal is defined %}
-<section id="journals-hal">
+{% if figures.journals_hal is defined and 'journals_hal' not in removed_sections %}
+<section id="journals-hal" data-section="journals_hal">
   <h2>Liste des revues</h2>
   {{ figures.journals_hal | safe }}
   {% if journalshalinfo is defined and journalshalinfo %}<p class="dibiso-info">{{ journalshalinfo }}</p>{% endif %}
@@ -62,8 +63,8 @@
 {% endif %}
 
 {# ── 3. Liste des conférences ────────────────────────────────── #}
-{% if figures.conferences is defined %}
-<section id="conferences">
+{% if figures.conferences is defined and 'conferences' not in removed_sections %}
+<section id="conferences" data-section="conferences">
   <h2>Liste des conférences</h2>
   {{ figures.conferences | safe }}
   {% if conferencesinfo is defined and conferencesinfo %}<p class="dibiso-info">{{ conferencesinfo }}</p>{% endif %}
@@ -74,8 +75,8 @@
 {% endif %}
 
 {# ── 4. Liste des chapitres ──────────────────────────────────── #}
-{% if figures.chapters is defined %}
-<section id="chapters">
+{% if figures.chapters is defined and 'chapters' not in removed_sections %}
+<section id="chapters" data-section="chapters">
   <h2>Liste des chapitres</h2>
   {{ figures.chapters | safe }}
   {% if chaptersinfo is defined and chaptersinfo %}<p class="dibiso-info">{{ chaptersinfo }}</p>{% endif %}
@@ -86,8 +87,8 @@
 {% endif %}
 
 {# ── 5. Typologie ────────────────────────────────────────────── #}
-{% if figures.works_type is defined %}
-<section id="works-type">
+{% if figures.works_type is defined and 'works_type' not in removed_sections %}
+<section id="works-type" data-section="works_type">
   <h2>Typologie de la production scientifique</h2>
   {{ figures.works_type | safe }}
   {% if workstype_info is defined and workstype_info %}<p class="dibiso-info">{{ workstype_info }}</p>{% endif %}
@@ -98,8 +99,8 @@
 {% endif %}
 
 {# ── 6. Articles en accès ouvert ─────────────────────────────── #}
-{% if figures.open_access_works is defined %}
-<section id="open-access-works">
+{% if figures.open_access_works is defined and 'open_access_works' not in removed_sections %}
+<section id="open-access-works" data-section="open_access_works">
   <h2>Articles et Communications de congrès en accès ouvert</h2>
   {{ figures.open_access_works | safe }}
   {% if openaccessworksinfo is defined and openaccessworksinfo %}<p class="dibiso-info">{{ openaccessworksinfo }}</p>{% endif %}
@@ -117,8 +118,8 @@
 {% endif %}
 
 {# ── 7. Revues et voies d'accès (BSO) ───────────────────────── #}
-{% if figures.journals is defined %}
-<section id="journals">
+{% if figures.journals is defined and 'journals' not in removed_sections %}
+<section id="journals" data-section="journals">
   <h2>Revues et voies d'accès ouvert (BSO)</h2>
   {{ figures.journals | safe }}
   {% if bsojournalsinfo is defined and bsojournalsinfo %}<p class="dibiso-info">{{ bsojournalsinfo }}</p>{% endif %}
@@ -129,8 +130,8 @@
 {% endif %}
 
 {# ── 8. Carte des collaborations internationales ─────────────── #}
-{% if figures.collaboration_map_world is defined %}
-<section id="collaboration-map-world">
+{% if figures.collaboration_map_world is defined and 'collaboration_map_world' not in removed_sections %}
+<section id="collaboration-map-world" data-section="collaboration_map_world">
   <h2>Carte des collaborations internationales</h2>
   {{ figures.collaboration_map_world | safe }}
   {% if collaborationmapworldinfo is defined and collaborationmapworldinfo %}<p class="dibiso-info">{{ collaborationmapworldinfo }}</p>{% endif %}
@@ -141,8 +142,8 @@
 {% endif %}
 
 {# ── 9. Carte des collaborations européennes ─────────────────── #}
-{% if figures.collaboration_map_europe is defined %}
-<section id="collaboration-map-europe">
+{% if figures.collaboration_map_europe is defined and 'collaboration_map_europe' not in removed_sections %}
+<section id="collaboration-map-europe" data-section="collaboration_map_europe">
   <h2>Carte des collaborations européennes</h2>
   {{ figures.collaboration_map_europe | safe }}
   {% if collaborationmapeuropeinfo is defined and collaborationmapeuropeinfo %}<p class="dibiso-info">{{ collaborationmapeuropeinfo }}</p>{% endif %}
@@ -153,8 +154,8 @@
 {% endif %}
 
 {# ── 10. Collaborations par établissements ───────────────────── #}
-{% if figures.collaboration_names is defined %}
-<section id="collaboration-names">
+{% if figures.collaboration_names is defined and 'collaboration_names' not in removed_sections %}
+<section id="collaboration-names" data-section="collaboration_names">
   <h2>Collaborations internationales par établissements</h2>
   {{ figures.collaboration_names | safe }}
   {% if collaborationnamesinfo is defined and collaborationnamesinfo %}<p class="dibiso-info">{{ collaborationnamesinfo }}</p>{% endif %}
@@ -165,8 +166,8 @@
 {% endif %}
 
 {# ── 11. Collaborations secteur privé ────────────────────────── #}
-{% if figures.private_sector_collaborations is defined %}
-<section id="private-sector">
+{% if figures.private_sector_collaborations is defined and 'private_sector_collaborations' not in removed_sections %}
+<section id="private-sector" data-section="private_sector_collaborations">
   <h2>Collaborations avec le secteur privé</h2>
   {{ figures.private_sector_collaborations | safe }}
   {% if privatesectorcollaborationsinfo is defined and privatesectorcollaborationsinfo %}<p class="dibiso-info">{{ privatesectorcollaborationsinfo }}</p>{% endif %}
@@ -177,8 +178,8 @@
 {% endif %}
 
 {# ── 12. Projets européens ───────────────────────────────────── #}
-{% if figures.european_projects is defined %}
-<section id="european-projects">
+{% if figures.european_projects is defined and 'european_projects' not in removed_sections %}
+<section id="european-projects" data-section="european_projects">
   <h2>Publications liées à des projets européens</h2>
   {{ figures.european_projects | safe }}
   {% if europeanprojectsinfo is defined and europeanprojectsinfo %}<p class="dibiso-info">{{ europeanprojectsinfo }}</p>{% endif %}
@@ -189,8 +190,8 @@
 {% endif %}
 
 {# ── 13. Projets ANR ─────────────────────────────────────────── #}
-{% if figures.anr_projects is defined %}
-<section id="anr-projects">
+{% if figures.anr_projects is defined and 'anr_projects' not in removed_sections %}
+<section id="anr-projects" data-section="anr_projects">
   <h2>Publications liées à des projets ANR</h2>
   {{ figures.anr_projects | safe }}
   {% if anrprojectsinfo is defined and anrprojectsinfo %}<p class="dibiso-info">{{ anrprojectsinfo }}</p>{% endif %}
@@ -201,7 +202,8 @@
 {% endif %}
 
 {# ── 14. Jeux de données partagés ────────────────────────────── #}
-<section id="data">
+{% if 'data' not in removed_sections %}
+<section id="data" data-section="data">
   <h2>Jeux de données partagés</h2>
   {% if analyses.data is defined and analyses.data %}
   <div class="analysis">{{ analyses.data | safe }}</div>
@@ -209,9 +211,11 @@
   <p class="dibiso-info"><em>Section à compléter.</em></p>
   {% endif %}
 </section>
+{% endif %}
 
 {# ── 15. Atouts du laboratoire ───────────────────────────────── #}
-<section id="strengths">
+{% if 'strengths' not in removed_sections %}
+<section id="strengths" data-section="strengths">
   <h2>Atouts du laboratoire</h2>
   {% if analyses.strengths is defined and analyses.strengths %}
   <div class="analysis">{{ analyses.strengths | safe }}</div>
@@ -219,9 +223,11 @@
   <p class="dibiso-info"><em>Section à compléter.</em></p>
   {% endif %}
 </section>
+{% endif %}
 
 {# ── 16. Préconisations ──────────────────────────────────────── #}
-<section id="recommendations">
+{% if 'recommendations' not in removed_sections %}
+<section id="recommendations" data-section="recommendations">
   <h2>Préconisations</h2>
   {% if analyses.recommendations is defined and analyses.recommendations %}
   <div class="analysis">{{ analyses.recommendations | safe }}</div>
@@ -229,5 +235,6 @@
   <p class="dibiso-info"><em>Section à compléter.</em></p>
   {% endif %}
 </section>
+{% endif %}
 
 {% endblock %}

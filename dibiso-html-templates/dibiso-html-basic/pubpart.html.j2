@@ -1,4 +1,5 @@
 {% extends "base.html.j2" %}
+{% set removed_sections = removed_sections | default([]) %}
 
 {% block report_type_label %}Publications &amp; Partenariats{% endblock %}
 {% block report_title %}Publications<br>&amp;<br>Partenariats{% endblock %}
@@ -7,18 +8,18 @@
 
 {% block title_subtitle %}<strong>{{ entitiesacronym | default('') }}</strong>{% if entitiesfullname is defined and entitiesfullname %}<br>{{ entitiesfullname }}{% endif %}{% endblock %}
 {% block toc_entries %}
-  {% if figures.topics_collaborations is defined %}<li><span>Principales thématiques de recherche</span></li>{% endif %}
-  {% if figures.topics_potential_collaborations is defined %}<li><span>Potentiel de collaboration identifié</span></li>{% endif %}
-  {% if figures.institutions_lineage_collaborations is defined %}<li><span>Top 25 structures internes</span></li>{% endif %}
-  {% if figures.works_collaborations_normalized is defined %}<li><span>Top 25 co-publications (citations normalisées)</span></li>{% endif %}
-  {% if figures.works_collaborations_count is defined %}<li><span>Top 25 co-publications (citations)</span></li>{% endif %}
-  <li><span>Analyse</span></li>
+  {% if figures.topics_collaborations is defined and 'topics_collaborations' not in removed_sections %}<li><a href="#topics-collaborations">Principales thématiques de recherche</a></li>{% endif %}
+  {% if figures.topics_potential_collaborations is defined and 'topics_potential_collaborations' not in removed_sections %}<li><a href="#topics-potential">Potentiel de collaboration identifié</a></li>{% endif %}
+  {% if figures.institutions_lineage_collaborations is defined and 'institutions_lineage_collaborations' not in removed_sections %}<li><a href="#institutions">Top 25 structures internes</a></li>{% endif %}
+  {% if figures.works_collaborations_normalized is defined and 'works_collaborations_normalized' not in removed_sections %}<li><a href="#works-citations-normalized">Top 25 co-publications (citations normalisées)</a></li>{% endif %}
+  {% if figures.works_collaborations_count is defined and 'works_collaborations_count' not in removed_sections %}<li><a href="#works-citations-count">Top 25 co-publications (citations)</a></li>{% endif %}
+  {% if 'analysis' not in removed_sections %}<li><a href="#analysis">Analyse</a></li>{% endif %}
 {% endblock %}
 
 {% block main_content %}
 
-{% if figures.topics_collaborations is defined %}
-<section id="topics-collaborations">
+{% if figures.topics_collaborations is defined and 'topics_collaborations' not in removed_sections %}
+<section id="topics-collaborations" data-section="topics_collaborations">
   <h2>Principales thématiques de recherche</h2>
   {{ figures.topics_collaborations | safe }}
   {% if analyses.topics_collaborations is defined and analyses.topics_collaborations %}
@@ -27,8 +28,8 @@
 </section>
 {% endif %}
 
-{% if figures.topics_potential_collaborations is defined %}
-<section id="topics-potential">
+{% if figures.topics_potential_collaborations is defined and 'topics_potential_collaborations' not in removed_sections %}
+<section id="topics-potential" data-section="topics_potential_collaborations">
   <h2>Potentiel de collaboration identifié</h2>
   {{ figures.topics_potential_collaborations | safe }}
   {% if analyses.topics_potential_collaborations is defined and analyses.topics_potential_collaborations %}
@@ -37,8 +38,8 @@
 </section>
 {% endif %}
 
-{% if figures.institutions_lineage_collaborations is defined %}
-<section id="institutions">
+{% if figures.institutions_lineage_collaborations is defined and 'institutions_lineage_collaborations' not in removed_sections %}
+<section id="institutions" data-section="institutions_lineage_collaborations">
   <h2>Top 25 structures internes</h2>
   {{ figures.institutions_lineage_collaborations | safe }}
   {% if analyses.institutions_lineage_collaborations is defined and analyses.institutions_lineage_collaborations %}
@@ -47,8 +48,8 @@
 </section>
 {% endif %}
 
-{% if figures.works_collaborations_normalized is defined %}
-<section id="works-citations-normalized">
+{% if figures.works_collaborations_normalized is defined and 'works_collaborations_normalized' not in removed_sections %}
+<section id="works-citations-normalized" data-section="works_collaborations_normalized">
   <h2>Top 25 co-publications par citations normalisées</h2>
   {{ figures.works_collaborations_normalized | safe }}
   {% if analyses.works_collaborations_normalized is defined and analyses.works_collaborations_normalized %}
@@ -57,8 +58,8 @@
 </section>
 {% endif %}
 
-{% if figures.works_collaborations_count is defined %}
-<section id="works-citations-count">
+{% if figures.works_collaborations_count is defined and 'works_collaborations_count' not in removed_sections %}
+<section id="works-citations-count" data-section="works_collaborations_count">
   <h2>Top 25 co-publications par citations</h2>
   {{ figures.works_collaborations_count | safe }}
   {% if analyses.works_collaborations_count is defined and analyses.works_collaborations_count %}
@@ -67,7 +68,8 @@
 </section>
 {% endif %}
 
-<section id="analysis">
+{% if 'analysis' not in removed_sections %}
+<section id="analysis" data-section="analysis">
   <h2>Analyse</h2>
   {% if analyses.analysis is defined and analyses.analysis %}
   <div class="analysis">{{ analyses.analysis | safe }}</div>
@@ -75,5 +77,6 @@
   <p class="dibiso-info"><em>Section à compléter.</em></p>
   {% endif %}
 </section>
+{% endif %}
 
 {% endblock %}
