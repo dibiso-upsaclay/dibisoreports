@@ -166,6 +166,9 @@ class Dibisoplot:
             if cls in ("AnrProjects", "EuropeanProjects"):
                 prefix = self._("The number of displayed projects was limited to ")
                 suffix = self._(f" projects were found.")
+            elif cls == "Books":
+                prefix = self._("The number of displayed books was limited to ")
+                suffix = self._(" books were found.")
             elif cls == "Chapters":
                 prefix = self._("The number of displayed chapters was limited to ")
                 suffix = self._(" chapters were found.")
@@ -230,6 +233,7 @@ class Dibisoplot:
             caption: str | None = None,
             label: str | None = None,
             max_plotted_entities: int | None = None,
+            escape_html: bool = True,
     ) -> str:
         """
         Convert a pandas DataFrame to an HTML table fragment wrapped in a <figure>.
@@ -255,7 +259,7 @@ class Dibisoplot:
                     truncated_total = total_rows
                 break
             cells = "".join(
-                f"<td>{html_lib.escape(str(v)) if not pd.isna(v) else ''}</td>"
+                f"<td>{(html_lib.escape(str(v)) if escape_html else str(v)) if not pd.isna(v) else ''}</td>"
                 for v in row
             )
             rows.append(f"<tr>{cells}</tr>")
@@ -536,4 +540,31 @@ class Dibisoplot:
         if self.title is not None:
             fig.update_layout(title=self.title)
 
+        import re
+        if hasattr(self, "__class__") and self.__class__.__name__ in ["Conferences", "CollaborationNames"]:
+            struct_names = []
+            pattern = r"__([A-Z]{2})__$"
+            for index, struct_full_name in enumerate(list(self.data.keys())):
+                match=re.search(pattern, struct_full_name.strip())
+                if match:
+                    country_code = match.group(1).lower()
+                    struct_name = struct_full_name.replace(f"__{match.group(1)}__","").strip()
+                    struct_names.append(struct_name) # Adding spaces to avoid the text overlapping with the flag +"       "
+                    fig.add_layout_image(
+                        dict(
+                            source=f"https://flagcdn.com/{country_code}.svg",
+                            xref="paper",
+                            yref="y",
+                            x=-0.05,
+                            y=index,
+                            sizex=0.07,
+                            sizey=0.7,
+                            xanchor="right",
+                            yanchor="middle",
+                            layer="above"
+                        )
+                    )
+                else:
+                    struct_names.append(struct_full_name)
+            fig.update_yaxes(tickvals=list(range(len(struct_names))), ticktext=struct_names, ticklen=30, tickcolor="rgba(0,0,0,0)", tickmode="array")
         return fig

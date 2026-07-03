@@ -35,6 +35,10 @@ msgstr ""
 msgid "The number of displayed projects was limited to "
 msgstr "Le nombre de projets affichés a été limité à "
 
+#: biso/biso.py:318
+msgid "The number of displayed books was limited to "
+msgstr "Le nombre d'ourages affichés a été limité à "
+
 #: biso/biso.py:319
 msgid "The number of displayed chapters was limited to "
 msgstr "Le nombre de chapitres affichés a été limité à "
@@ -70,6 +74,10 @@ msgstr ". Dans l'API, "
 #: biso/biso.py:337
 msgid " projects were found."
 msgstr " projets ont été trouvés."
+
+#: biso/biso.py:338
+msgid " books were found."
+msgstr " ouvrages ont été trouvés."
 
 #: biso/biso.py:339
 msgid " chapters were found."
@@ -136,6 +144,10 @@ msgstr "Titre du livre"
 msgid "Publisher"
 msgstr "Éditeur"
 
+#: biso/biso.py:905
+msgid "List of books entered in HAL"
+msgstr "Liste des ouvrages renseignés dans HAL"
+
 #: biso/biso.py:960
 msgid "List of chapters entered in HAL"
 msgstr "Liste des chapitres renseignés dans HAL"
@@ -200,6 +212,9 @@ msgstr "Accès fermé"
 #: biso/biso.py:2300
 msgid "Error while making the bibliography"
 msgstr "Erreur lors de la création de la bibliographie"
+
+#~ msgid "Books list"
+#~ msgstr "Liste des ouvrages"
 
 #~ msgid "Chapters list"
 #~ msgstr "Liste des chapitres"

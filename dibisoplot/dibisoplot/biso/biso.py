@@ -9,7 +9,6 @@ import re
 from collections import Counter
 from datetime import datetime
 from openalex_analysis.data import InstitutionsData, WorksData
-import flag
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -1165,15 +1164,11 @@ class Conferences(Biso):
                 conf_name = conf_name[:75]+"... "
             # add country flag
             if country_code is None:
-                conf_name += " (" + self._("Unspecified country") + ")"
-            else:
-                try:
-                    conf_name += " " + flag.flag(country_code)
-                except flag.UnknownCountryCode:
-                    conf_name += f" ({country_code})"
-
-            return conf_name
-
+                return conf_name + " (" + self._("Unspecified country") + ")"
+            # country_flag=get_flag_img(country_code)
+            # return f"{country_flag}{conf_name}"
+            return f"{conf_name} __{country_code.upper()}__"
+        
         try:
             stats_url = (
                 f"https://api.archives-ouvertes.fr/search/{self.entity_id}/?q=publicationDateY_i:{self.year} AND "
@@ -1329,21 +1324,31 @@ class Journals(Biso):
                 elif row["has_apc"]=="zero":
                     return "HNO"
                 return "H"
+            
+            # SVG pictograms
+            svg_diamond = '<svg style="vertical-align: middle; margin-right: 4px;" height="16" width="16" viewBox="0 0 24 24" fill="#00b4d8"><path d="M12 2L2 12l10 10 10-10L12 2z"/></svg>'
+            svg_gold = '<svg style="vertical-align: middle; margin-right: 4px;" height="14" width="14"><circle cx="7" cy="7" r="6" fill="#ffb703"/></svg>'
+            svg_hybrid = '<svg style="vertical-align: middle; margin-right: 4px;" height="14" width="14"><circle cx="7" cy="7" r="6" fill="#a855f7"/></svg>'
+            svg_closed = '<svg style="vertical-align: middle; margin-right: 4px;" height="14" width="14" viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+            svg_other = '<svg style="vertical-align: middle; margin-right: 4px;" height="14" width="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>'
+
             mapping = {
-                "closed": "X",  # "❌"
-                "gold": "G",  # "🟡"
-                "diamond": "D",  # "💎"
+                "closed": f"{svg_closed}",  # "❌"
+                "gold": f"{svg_gold}",  # "🟡"
+                "diamond": f"{svg_diamond}",  # "💎"
                 "ambiguous_gold_hybrid": "G/H", # "🟡/🟤"
                 "ambiguous_gold_diamond": "G/D", # "🟡/💎"
-                "other": "?"  # "❓"
+                "other": f"{svg_other}"  # "❓"
             }
             return mapping.get(color, "?")
 
         def format_is_oa_on_repository(row) -> str:
+            svg_check = '<svg style="vertical-align: middle; margin-right: 4px;" height="14" width="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+            svg_closed = '<svg style="vertical-align: middle; margin-right: 4px;" height="14" width="14" viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
             status=row["is_oa_on_repository"]
             if pd.isna(status) or not status:
-                return "X" # "❌"
-            return "O" # "✅"
+                return f"{svg_closed}" # "❌"
+            return f"{svg_check}" # "✅"
 
         try:
             if self.scanr_api_url is None:
@@ -1527,6 +1532,7 @@ class Journals(Biso):
             ),
             label="journals",
             max_plotted_entities=self.max_plotted_entities,
+            escape_html=False,
         )
 
 

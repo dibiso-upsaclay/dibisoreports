@@ -83,10 +83,15 @@ def format_structure_name(struct_name: str, country_code: str) -> str:
     if len(struct_name) > 75:
         struct_name = struct_name[:75]+"... "
     # add country flag
-    if country_code is not None:
-        try:
-            struct_name += " " + flag.flag(country_code)
-        except flag.UnknownCountryCode:
-            struct_name += f" ({country_code})"
+    if country_code is None:
+        return struct_name + " (Unspecified country)"
+    # country_flag=get_flag_img(country_code)
+    # return f"{country_flag}{struct_name}"
+    return f"{struct_name} __{country_code.upper()}__"
 
-    return struct_name
+# def get_flag_img(country_code: str) -> str:
+#     if not country_code:
+#         return ""
+#     code = country_code.lower().strip()
+#     # Import flag in svg format by Flagcdn
+#     return f'<img src="https://flagcdn.com/{code}.svg"/>'

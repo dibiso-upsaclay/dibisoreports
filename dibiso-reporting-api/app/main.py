@@ -132,6 +132,7 @@ REPORT_SECTIONS: Dict[str, list] = {
     "biso": [
         {"id": "journals_hal",                  "label": "Liste des revues (HAL)"},
         {"id": "conferences",                   "label": "Liste des conférences"},
+        {"id": "books",                         "label": "Liste des ouvrages"},
         {"id": "chapters",                      "label": "Liste des chapitres"},
         {"id": "works_type",                    "label": "Typologie de la production scientifique"},
         {"id": "open_access_works",             "label": "Articles en accès ouvert"},

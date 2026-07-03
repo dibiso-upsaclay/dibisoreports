@@ -15,6 +15,7 @@
   <li><a href="#introduction">Introduction</a></li>
   {% if figures.journals_hal is defined and 'journals_hal' not in removed_sections %}<li><a href="#journals-hal">Liste des revues</a></li>{% endif %}
   {% if figures.conferences is defined and 'conferences' not in removed_sections %}<li><a href="#conferences">Liste des conférences</a></li>{% endif %}
+  {% if figures.books is defined and 'books' not in removed_sections %}<li><a href="#books">Liste des ouvrages</a></li>{% endif %}
   {% if figures.chapters is defined and 'chapters' not in removed_sections %}<li><a href="#chapters">Liste des chapitres</a></li>{% endif %}
   {% if figures.works_type is defined and 'works_type' not in removed_sections %}<li><a href="#works-type">Typologie de la production scientifique</a></li>{% endif %}
   {% if figures.open_access_works is defined and 'open_access_works' not in removed_sections %}<li><a href="#open-access-works">Articles en accès ouvert</a></li>{% endif %}
@@ -70,6 +71,18 @@
   {% if conferencesinfo is defined and conferencesinfo %}<p class="dibiso-info">{{ conferencesinfo }}</p>{% endif %}
   {% if analyses.conferences is defined and analyses.conferences %}
   <div class="analysis">{{ analyses.conferences | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── 4. Liste des ouvrages ───────────────────────────────────── #}
+{% if figures.books is defined and 'books' not in removed_sections %}
+<section id="books" data-section="books">
+  <h2>Liste des ouvrages</h2>
+  {{ figures.books | safe }}
+  {% if booksinfo is defined and booksinfo %}<p class="dibiso-info">{{ booksinfo }}</p>{% endif %}
+  {% if analyses.books is defined and analyses.books %}
+  <div class="analysis">{{ analyses.books | safe }}</div>
   {% endif %}
 </section>
 {% endif %}
@@ -177,26 +190,34 @@
 </section>
 {% endif %}
 
-{# ── 12. Projets européens ───────────────────────────────────── #}
-{% if figures.european_projects is defined and 'european_projects' not in removed_sections %}
-<section id="european-projects" data-section="european_projects">
-  <h2>Publications liées à des projets européens</h2>
-  {{ figures.european_projects | safe }}
-  {% if europeanprojectsinfo is defined and europeanprojectsinfo %}<p class="dibiso-info">{{ europeanprojectsinfo }}</p>{% endif %}
-  {% if analyses.european_projects is defined and analyses.european_projects %}
-  <div class="analysis">{{ analyses.european_projects | safe }}</div>
-  {% endif %}
-</section>
-{% endif %}
+{# ── 12 & 13. Projets de recherche (Européens et ANR) ───────────────── #}
+{% if (figures.european_projects is defined and 'european_projects' not in removed_sections) or (figures.anr_projects is defined and 'anr_projects' not in removed_sections) %}
+<section id="european-anr-projects">
+  <h2>Publications liées à des projets de recherche</h2>
+  <p>Cette section rassemble les productions scientifiques du laboratoire adossées à des contrats de recherche nationaux et internationaux.</p>
 
-{# ── 13. Projets ANR ─────────────────────────────────────────── #}
-{% if figures.anr_projects is defined and 'anr_projects' not in removed_sections %}
-<section id="anr-projects" data-section="anr_projects">
-  <h2>Publications liées à des projets ANR</h2>
-  {{ figures.anr_projects | safe }}
-  {% if anrprojectsinfo is defined and anrprojectsinfo %}<p class="dibiso-info">{{ anrprojectsinfo }}</p>{% endif %}
-  {% if analyses.anr_projects is defined and analyses.anr_projects %}
-  <div class="analysis">{{ analyses.anr_projects | safe }}</div>
+  {# ── Sous-section autonome : Projets Européens ── #}
+  {% if figures.european_projects is defined and 'european_projects' not in removed_sections %}
+  <section id="european-projects" data-section="european_projects" style="margin-bottom: 40px;">
+    <h3>Projets européens</h3>
+    {{ figures.european_projects | safe }}
+    {% if europeanprojectsinfo is defined and europeanprojectsinfo %}<p class="dibiso-info">{{ europeanprojectsinfo }}</p>{% endif %}
+    {% if analyses.european_projects is defined and analyses.european_projects %}
+    <div class="analysis">{{ analyses.european_projects | safe }}</div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {# ── Sous-section autonome : Projets ANR ── #}
+  {% if figures.anr_projects is defined and 'anr_projects' not in removed_sections %}
+  <section id="anr-projects" data-section="anr_projects">
+    <h3>Projets ANR</h3>
+    {{ figures.anr_projects | safe }}
+    {% if anrprojectsinfo is defined and anrprojectsinfo %}<p class="dibiso-info">{{ anrprojectsinfo }}</p>{% endif %}
+    {% if analyses.anr_projects is defined and analyses.anr_projects %}
+    <div class="analysis">{{ analyses.anr_projects | safe }}</div>
+    {% endif %}
+  </section>
   {% endif %}
 </section>
 {% endif %}

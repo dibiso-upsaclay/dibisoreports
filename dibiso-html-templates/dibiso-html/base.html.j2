@@ -38,6 +38,7 @@
 {% set figures = figures | default({}) %}
 {% set has_hal = figures.journals_hal is defined
               or figures.conferences is defined
+              or figures.books is defined
               or figures.chapters is defined
               or figures.works_type is defined
               or figures.open_access_works is defined

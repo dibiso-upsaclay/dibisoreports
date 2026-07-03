@@ -207,13 +207,12 @@ class DibisoReporting:
                 # Remove fixed width/height attributes from the SVG root so CSS can scale it.
                 svg_content = re.sub(r'(<svg[^>]*)\s+width="[^"]*"', r'\1', svg_content, count=1)
                 svg_content = re.sub(r'(<svg[^>]*)\s+height="[^"]*"', r'\1', svg_content, count=1)
-                # Replace Unicode flag emoji (Regional Indicator pairs) with ASCII country codes.
-                # WeasyPrint/Cairo cannot render these emoji glyphs.
-                svg_content = re.sub(
-                    r'([\U0001F1E0-\U0001F1FF])([\U0001F1E0-\U0001F1FF])',
-                    lambda m: f"({chr(ord(m.group(1)) - 0x1F1E6 + ord('A'))}{chr(ord(m.group(2)) - 0x1F1E6 + ord('A'))})",
-                    svg_content,
-                )
+
+                # Replace Flag pattern with svg from flagcdn
+                #country_code=REGEX.lower()
+                #f'<image href="https://flagcdn.com/{country_code}.svg" width="16" height="12" y="-10" x="-20"/>'
+                # svg_content=re.sub(REGEX, REMPLACEMENT, svg_content)
+
                 figures[fig_name] = f'<div class="dibiso-svg-figure">{svg_content}</div>'
 
         context["figures"] = figures

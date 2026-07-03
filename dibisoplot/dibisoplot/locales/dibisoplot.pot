@@ -31,6 +31,10 @@ msgstr ""
 msgid "The number of displayed projects was limited to "
 msgstr ""
 
+#: biso/biso.py:318
+msgid "The number of displayed books was limited to "
+msgstr ""
+
 #: biso/biso.py:319
 msgid "The number of displayed chapters was limited to "
 msgstr ""
@@ -65,6 +69,10 @@ msgstr ""
 
 #: biso/biso.py:337
 msgid " projects were found."
+msgstr ""
+
+#: biso/biso.py:338
+msgid " books were found."
 msgstr ""
 
 #: biso/biso.py:339
@@ -131,6 +139,11 @@ msgstr ""
 #: biso/biso.py:929 biso/biso.py:1855
 msgid "Publisher"
 msgstr ""
+
+#: biso/biso.py:950
+msgid "List of books entered in HAL"
+msgstr ""
+
 
 #: biso/biso.py:960
 msgid "List of chapters entered in HAL"
