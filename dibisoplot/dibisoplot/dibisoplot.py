@@ -284,7 +284,7 @@ class Dibisoplot:
             )
 
         id_attr = f' id="{html_lib.escape(label)}"' if label else ""
-        caption_html = f"<figcaption>{html_lib.escape(caption)}</figcaption>" if caption else ""
+        caption_html = f"<figcaption>{html_lib.escape(caption) if escape_html else str(caption)}</figcaption>" if caption else ""
 
         return (
             f'<figure class="dibiso-table"{id_attr}>'

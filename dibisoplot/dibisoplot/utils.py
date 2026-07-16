@@ -80,8 +80,8 @@ def format_structure_name(struct_name: str, country_code: str) -> str:
     :rtype: str
     """
     # crop name if too long
-    if len(struct_name) > 75:
-        struct_name = struct_name[:75]+"... "
+    if len(struct_name) > 65:
+        struct_name = struct_name[:65]+"... "
     # add country flag
     if country_code is None:
         return struct_name + " (Unspecified country)"

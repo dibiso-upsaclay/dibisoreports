@@ -16,6 +16,7 @@ from dibisoplot.biso import OpenAccessWorks
 from dibisoplot.biso import PrivateSectorCollaborations
 from dibisoplot.biso import WorksBibtex
 from dibisoplot.biso import WorksType
+from dibisoplot.biso import Data
 
 from dibisoreporting import DibisoReporting
 
@@ -47,7 +48,8 @@ class Biso(DibisoReporting):
         "OpenAccessWorks": OpenAccessWorks,
         "PrivateSectorCollaborations": PrivateSectorCollaborations,
         "WorksBibtex": WorksBibtex,
-        "WorksType": WorksType
+        "WorksType": WorksType,
+        "Data": Data
     }
 
     default_plot_main_color = "#004e7d"
@@ -127,6 +129,13 @@ class Biso(DibisoReporting):
             }
         ],
         "WorksType": [{}],
+        "Data": [
+            {
+                "stats_to_save": {
+                    "bso_datasets_phrase": "bsodatasetsphrase"
+                }
+            }
+        ]
     }
 
 

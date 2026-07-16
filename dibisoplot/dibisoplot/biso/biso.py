@@ -194,7 +194,7 @@ class Biso(Dibisoplot):
         except Exception as e:
             logging.error(f"Impossible to validate BSO version with Elasticsearch : {e}")
 
-    def get_all_ids_with_cursor(self, id_type = 'doi'):
+    def get_all_ids_with_cursor(self, id_type = 'doi', doc_types: list[str] | None = None):
         """Get all DOI articles using cursor pagination"""
         id_type_fields = {
             "doi": "doiId_s",
@@ -203,6 +203,11 @@ class Biso(Dibisoplot):
         id_field = id_type_fields[id_type]
         all_ids = []
         cursor_mark = "*"  # Initial cursor
+
+        if doc_types is None:
+            doc_types = ["ART", "COMM"]
+        doc_type_query = doc_types[0] if len(doc_types) == 1 else f"({' OR '.join(doc_types)})"
+
         if self.max_entities is None:
             rows_per_request = self.default_hal_cursor_rows_per_request
         else:
@@ -223,7 +228,7 @@ class Biso(Dibisoplot):
             # Build the cursor-based query URL
             cursor_url = (
                 f"https://api.archives-ouvertes.fr/search/{self.entity_id}/?q=publicationDateY_i:{self.year} AND "
-                f"docType_s:(ART OR COMM) AND {id_field}:[* TO *]&wt=json&rows={current_rows}&"
+                f"docType_s:{doc_type_query} AND {id_field}:[* TO *]&wt=json&rows={current_rows}&"
                 f"sort=docid asc&cursorMark={cursor_mark}&fl={id_field}"
             )
 
@@ -684,8 +689,8 @@ class CollaborationMap(Biso):
     default_countries_lines_color = "#999999"
     default_frame_color = default_countries_lines_color
     # override Biso class default height and width
-    default_height = 500
-    default_width = 1200
+    default_height = 700
+    default_width = 1400
     default_height_zoom = 800
     default_width_zoom = 1200
     default_zoom_lat_range = [33.5,71]
@@ -981,7 +986,7 @@ class CollaborationMap(Biso):
             ),
         )
 
-        fig.update_layout(margin=self.margin)
+        fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), autosize=True)
 
         if self.title is not None:
             fig.update_layout(title=self.title)
@@ -1160,8 +1165,8 @@ class Conferences(Biso):
             :rtype: str
             """
             # crop name if too long
-            if len(conf_name) > 75:
-                conf_name = conf_name[:75]+"... "
+            if len(conf_name) > 65:
+                conf_name = conf_name[:70]+"... "
             # add country flag
             if country_code is None:
                 return conf_name + " (" + self._("Unspecified country") + ")"
@@ -1268,16 +1273,31 @@ class Journals(Biso):
     COLOR_RULES = [
         {"oa_color": "other",     "is_oa": True, "journal_is_oa": False,  "has_apc": ["missing", "zero", "numeric"], "color_final": "hybrid"},
         
-        {"oa_color": "other",     "is_oa": True, "journal_is_oa": True,   "has_apc": "missing",  "color_final": "ambiguous_gold_diamond"},
+        {"oa_color": "other",     "is_oa": True, "journal_is_oa": True,   "has_apc": "missing",  "color_final": "other"}, #Useless, kept in case of future decision
         {"oa_color": "other",     "is_oa": True, "journal_is_oa": True,   "has_apc": "zero",  "color_final": "diamond"},
         {"oa_color": "other",     "is_oa": True, "journal_is_oa": True,   "has_apc": "numeric",  "color_final": "gold"},
         
-        {"oa_color": "other",     "is_oa": True, "journal_is_oa": None,   "has_apc": "missing",  "color_final": "other"}, #Useless, kept in case of future decision
-        {"oa_color": "other",     "is_oa": True, "journal_is_oa": None,   "has_apc": "zero",  "color_final": "diamond"},
-        {"oa_color": "other",     "is_oa": True, "journal_is_oa": None,   "has_apc": "numeric",  "color_final": "ambiguous_gold_hybrid"}
+        {"oa_color": "other",     "is_oa": True, "journal_is_oa": None,   "has_apc": "missing",  "color_final": "other"},
+        {"oa_color": "other",     "is_oa": True, "journal_is_oa": None,   "has_apc": "zero",  "color_final": "other"},
+        {"oa_color": "other",     "is_oa": True, "journal_is_oa": None,   "has_apc": "numeric",  "color_final": "other"}
     ]
 
     RESOLVE_COLORS = pd.DataFrame.from_records(COLOR_RULES).explode('has_apc')
+
+    # SVG pictograms
+    svg_diamond = '<svg style="vertical-align: middle; margin-right: 4px;" height="16" width="16" viewBox="0 0 24 24" fill="#00b4d8"><path d="M12 2L2 12l10 10 10-10L12 2z"/></svg>'
+    svg_gold = '<svg style="vertical-align: middle; margin-right: 4px;" height="14" width="14"><circle cx="7" cy="7" r="6" fill="#ffb703"/></svg>'
+    svg_check = '<svg style="vertical-align: middle; margin-right: 4px;" height="14" width="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+    svg_closed = '<svg style="vertical-align: middle; margin-right: 4px;" height="14" width="14" viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+    svg_other = '<svg style="vertical-align: middle; margin-right: 4px;" height="14" width="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>'
+    
+    legend_html = (
+            f"<br/>"
+            f"<strong>Légende :</strong> "
+            f"{svg_diamond}Revue Diamant | "
+            f"{svg_gold}Revue Gold"
+            f"<br/>"
+        )
 
     figure_file_extension = "tex"
     html_figure_type = "html_table"
@@ -1308,47 +1328,27 @@ class Journals(Biso):
         def format_apc(row):
             if pd.notna(row['amount_apc_EUR']):
                 return f"{int(row['amount_apc_EUR'])}"
-            # If the journal is diamond OA, we can assume that the APC is 0
-            if row['oa_color']=="D":
-                return "0"
-            # If the journal is closed, hybrid, or gold OA, we can assume that the APC is missing
             return None
         
         def format_color(row) -> str:
             color = row["color_final"] if pd.notna(row["color_final"]) else row["oa_color"]
             if pd.isna(color):
-                return "?" # "❓"
+                return f"{self.svg_other}" # "❓"
             if color=="hybrid":
                 if row["has_apc"]=="numeric":
-                    return "HO"
-                elif row["has_apc"]=="zero":
-                    return "HNO"
-                return "H"
-            
-            # SVG pictograms
-            svg_diamond = '<svg style="vertical-align: middle; margin-right: 4px;" height="16" width="16" viewBox="0 0 24 24" fill="#00b4d8"><path d="M12 2L2 12l10 10 10-10L12 2z"/></svg>'
-            svg_gold = '<svg style="vertical-align: middle; margin-right: 4px;" height="14" width="14"><circle cx="7" cy="7" r="6" fill="#ffb703"/></svg>'
-            svg_hybrid = '<svg style="vertical-align: middle; margin-right: 4px;" height="14" width="14"><circle cx="7" cy="7" r="6" fill="#a855f7"/></svg>'
-            svg_closed = '<svg style="vertical-align: middle; margin-right: 4px;" height="14" width="14" viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
-            svg_other = '<svg style="vertical-align: middle; margin-right: 4px;" height="14" width="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>'
-
-            mapping = {
-                "closed": f"{svg_closed}",  # "❌"
-                "gold": f"{svg_gold}",  # "🟡"
-                "diamond": f"{svg_diamond}",  # "💎"
-                "ambiguous_gold_hybrid": "G/H", # "🟡/🟤"
-                "ambiguous_gold_diamond": "G/D", # "🟡/💎"
-                "other": f"{svg_other}"  # "❓"
-            }
-            return mapping.get(color, "?")
+                    return f"{self.svg_check}" # "✅"
+                # CLOSED si apc=zero ???
+            if color in ["gold", "diamond"]:
+                return f"{self.svg_check}" # "✅"
+            if color=="closed":
+                return f"{self.svg_closed}" # "❌"
+            return f"{self.svg_other}" # "❓"
 
         def format_is_oa_on_repository(row) -> str:
-            svg_check = '<svg style="vertical-align: middle; margin-right: 4px;" height="14" width="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
-            svg_closed = '<svg style="vertical-align: middle; margin-right: 4px;" height="14" width="14" viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
             status=row["is_oa_on_repository"]
             if pd.isna(status) or not status:
-                return f"{svg_closed}" # "❌"
-            return f"{svg_check}" # "✅"
+                return f"{self.svg_closed}" # "❌"
+            return f"{self.svg_check}" # "✅"
 
         try:
             if self.scanr_api_url is None:
@@ -1361,8 +1361,8 @@ class Journals(Biso):
                     'info': self._("Error")
                 }
                 return stats
-            doi_ids = self.get_all_ids_with_cursor(id_type="doi")
-            hal_ids = self.get_all_ids_with_cursor(id_type="hal")
+            doi_ids = self.get_all_ids_with_cursor(id_type="doi", doc_types=["ART"])
+            hal_ids = self.get_all_ids_with_cursor(id_type="hal", doc_types=["ART"])
             # format IDs for scanr:
             doi_ids = [f"doi{doi_id}" for doi_id in doi_ids]
             hal_ids = [f"hal{hal_id}" for hal_id in hal_ids]
@@ -1443,6 +1443,8 @@ class Journals(Biso):
             self.data['journal_name'] = self.data['journal_name'].fillna(self._("Unspecified journal"))
             self.data['publisher'] = self.data['publisher'].fillna(self._("Unspecified publisher"))
 
+            self.data['color_raw'] = self.data["color_final"].fillna(self.data["oa_color"])
+            
             # format values
             self.data['oa_color'] = self.data.apply(format_color, axis=1)
             self.data['paid_apc'] = self.data.apply(format_apc, axis=1)
@@ -1456,8 +1458,19 @@ class Journals(Biso):
                 else:
                     apc_str = ""
 
+                raw_colors = group["color_raw"].dropna().tolist()
+                exclusive_svg = ""
+                if raw_colors and len(raw_colors) == len(group):
+                    # If all diamond -> add diamond pictogram, if all gold -> add gold pictogram, else no pictogram
+                    if all(c == "diamond" for c in raw_colors):
+                        exclusive_svg = self.svg_diamond
+                    elif all(c == "gold" for c in raw_colors):
+                        if apc_str:
+                            exclusive_svg = self.svg_gold
+
                 merged_data = {
                     "journal_name": group.name,
+                    "oa_status_exclusive": exclusive_svg,
                     "publisher": ' ; '.join(group['publisher'].dropna().unique()),
                     "nb_works": len(group),
                     "oa_color": ' '.join(group['oa_color']),
@@ -1467,7 +1480,7 @@ class Journals(Biso):
                 return pd.Series(merged_data)
 
             self.data = self.data.groupby("journal_name").apply(merge_cells, include_groups=False).reset_index(
-                drop=True).sort_values(["nb_works", "paid_apc"], ascending=[False, False])
+                drop=True).sort_values(["nb_works", "oa_status_exclusive", "paid_apc"], ascending=[False, False, False])
             # move unspecified journals to the end
             idx = self.data.index.tolist() # copy index
             # find index of the Unspecified journal
@@ -1517,9 +1530,10 @@ class Journals(Biso):
         df = self.data.copy(deep=True)
         df = df.rename(columns={
             "journal_name": self._("Journal"),
+            "oa_status_exclusive": " ",
             "publisher": self._("Publisher"),
             "nb_works": self._("Number of works in BSO"),
-            "oa_color": self._("Access type on the journal"),
+            "oa_color": self._("Open access on the journal"),
             "is_oa_on_repository": self._("Open access on a repository"),
             "paid_apc": self._("Paid APC (€)"),
         })
@@ -1528,7 +1542,8 @@ class Journals(Biso):
             df,
             caption=(
                 self._("List of journals, publishers, open access status and paid APC") + ". " +
-                self._("From the list of publications in HAL and the data of the BSO") + " " + self.scanr_bso_version + "."
+                self._("From the list of publications in HAL and the data of the BSO") + " " + self.scanr_bso_version + "." +
+                self.legend_html
             ),
             label="journals",
             max_plotted_entities=self.max_plotted_entities,
@@ -1586,6 +1601,17 @@ class JournalsHal(Biso):
                 self.data = dict(sorted(self.data.items(), key=lambda item: item[1]))
                 self.data_status = DataStatus.OK
             self.generate_plot_info()
+            full_url = (
+                f"https://api.archives-ouvertes.fr/search/{self.entity_id}/?q=publicationDateY_i:{self.year}&wt=json&rows=0"
+                f"&facet=true&facet.field=journalTitle_s&facet.mincount=1&"
+                "stats=true&stats.field={!count=true+cardinality=true}journalTitle_s"
+            )
+            if self.n_entities_found > self.max_plotted_entities:
+                self.info = (
+                    f"Le nombre de revues affichées a été limité à {self.max_plotted_entities}. "
+                    f"Dans <a href='{full_url}'>l'API HAL</a>, "
+                    f"{self.n_entities_found} revues ont été trouvées."
+                )
             return {"info": self.info}
         except Exception as e:
             return self._handle_fetch_error(e, "Error fetching or formatting Hal journals data")
@@ -2069,3 +2095,160 @@ class WorksType(Biso):
             return {"info": self.info}
         except Exception as e:
             return self._handle_fetch_error(e, "Error fetching or formatting work types data")
+
+class Data(Biso):
+    """
+    A class to fetch data about shared datasets from the BSO index and the DataCite API
+    """
+    figure_file_extension = "tex"
+    html_figure_type = "html_table"
+
+    def __init__(self, entity_id: str, year: int | None = None, **kwargs):
+        """
+        Initialize the Data class.
+        """
+        super().__init__(entity_id, year, **kwargs)
+
+    def fetch_data(self) -> dict[str, Any]:
+        """
+        À développer
+        """
+        try:
+            # ------------------------ BSO -------------------------
+
+            if self.scanr_api_url is None:
+                self.data_status = DataStatus.ERROR
+                stats = {
+                    'total_bso_pubs': self._("Error"),
+                    'nb_pubs_with_data': self._("Error"),
+                    'percentage_data': self._("Error"),
+                    'bso_datasets_phrase': self._("Error"),
+                    'info': self._("Error")
+                }
+                return stats
+
+            doi_ids = self.get_all_ids_with_cursor(id_type="doi")
+            hal_ids = self.get_all_ids_with_cursor(id_type="hal")
+            
+            doi_ids = [f"doi{doi_id}" for doi_id in doi_ids]
+            hal_ids = [f"hal{hal_id}" for hal_id in hal_ids]
+            
+            fields_to_retrieve = [
+                "datastet_details.has_shared"
+            ]
+
+            works = self.get_works_from_es_index_from_id_by_chunk(
+                self.scanr_bso_index,
+                hal_ids + doi_ids,
+                fields_to_retrieve
+            )
+
+            total_bso_pubs = len(works)
+            nb_found_datasets=0
+            nb_shared_datasets = 0
+
+            for work in works:
+                source = work.get('_source', {})
+                dataset_obj = source.get("datastet_details")
+                if dataset_obj and isinstance(dataset_obj, dict):
+                    has_shared = dataset_obj.get("has_shared")
+                    if has_shared is not None:
+                        nb_found_datasets += 1
+                        if has_shared is True:
+                            nb_shared_datasets += 1
+
+            percentage_found = (nb_found_datasets / total_bso_pubs * 100) if total_bso_pubs > 0 else 0.0
+            percentage_shared_on_found = (nb_shared_datasets / nb_found_datasets * 100) if nb_found_datasets > 0 else 0.0
+
+            bso_datasets_phrase = (
+                f"Sur un total de {total_bso_pubs} publications présentes dans le BSO, "
+                f"l'information sur les données a été détectée pour {nb_found_datasets} d'entre elles ({percentage_found:.0f}% des publications). "
+                f"Parmi ces publications, {nb_shared_datasets}/{nb_found_datasets} ont effectivement partagé un jeu de données "
+                f"({percentage_shared_on_found:.0f}% des publications détectées)."
+            )
+            self.info = bso_datasets_phrase
+
+            if total_bso_pubs == 0:
+                self.data_status = DataStatus.NO_DATA
+            else:
+                self.data_status = DataStatus.OK
+
+            # ---------------------- DATACITE ----------------------
+
+            institution_ror="https://ror.org/03xjwb503" # ROR UPS en attendant qu'il soit récupéré depuis l'appli
+            url = (
+                f"https://api.datacite.org/dois?resource-type-id=dataset"
+                f"&affiliation-id={institution_ror}"
+                f"&query=!relatedIdentifiers.relationType:IsVersionOf"
+                f"&registered={self.year}"
+                f"&page[size]=1000"
+            )
+            response = requests.get(url)
+            response.raise_for_status()
+            datacite_data = response.json()
+
+            datacite_nb_datasets_found = datacite_data.get('meta', {}).get('total', 0)
+            datacite_datasets = datacite_data.get('data', [])
+
+            raw_data=[]
+
+            for dataset in datacite_datasets:
+                dataset_attributes = dataset.get('attributes', {})
+
+                dataset_publisher = dataset_attributes.get('publisher','Unknown')
+
+                rights_list=dataset_attributes.get('rightsList', [])
+                dataset_license = "Unknown"
+                if rights_list and isinstance(rights_list, list):
+                    dataset_license = rights_list[0].get('rightsIdentifier', 'Unknown')
+
+                raw_data.append({
+                    "publisher": dataset_publisher,
+                    "license": dataset_license
+                })
+
+            if raw_data:
+                df_raw=pd.DataFrame(raw_data)
+                self.data=df_raw.groupby("publisher").size().reset_index(name="nb_datasets").sort_values("nb_datasets", ascending=False)
+                self.data_status = DataStatus.OK
+            else:
+                self.data=pd.DataFrame(columns=["publisher", "nb_datasets"])
+                self.data_status = DataStatus.NO_DATA
+
+            stats = {
+                'total_bso_pubs': total_bso_pubs,
+                'nb_found_datasets': nb_found_datasets,
+                'bso_datasets_phrase': bso_datasets_phrase,
+                'total_datacite_datasets': datacite_nb_datasets_found,
+                'info': self.info
+            }
+            return stats
+
+        except Exception as e:
+            return self._handle_fetch_error(e, "Error fetching or formatting datasets data")
+
+    def get_figure(self) -> str:
+        """
+        À développer
+        """
+        if self.data_status == DataStatus.NOT_FETCHED:
+            self.fetch_data()
+        if self.data_status == DataStatus.NO_DATA:
+            return self.get_no_data_html()
+        if self.data_status == DataStatus.ERROR:
+            return self.get_error_html()
+        
+        df_to_plot=self.data.copy(deep=True)
+        df_to_plot = df_to_plot.rename(columns={
+            "publisher": self._("Repository"),
+            "nb_datasets": self._("Number of datasets")
+        })
+
+        return self.dataframe_to_html_table(
+            df_to_plot,
+            caption=(
+                self._("Distribution of DataCite datasets by repository")+f" ({self.year})"
+            ),
+            label="datasets",
+            max_plotted_entities=self.max_plotted_entities
+        )

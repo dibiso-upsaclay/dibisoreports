@@ -177,8 +177,8 @@ msgid "Number of works in BSO"
 msgstr "Nombre de travaux dans le BSO"
 
 #: biso/biso.py:1857
-msgid "Access type on the journal"
-msgstr "Type d'accès sur le journal"
+msgid "Open access on the journal"
+msgstr "Accès ouvert sur le journal"
 
 #: biso/biso.py:1858
 msgid "Open access on a repository"

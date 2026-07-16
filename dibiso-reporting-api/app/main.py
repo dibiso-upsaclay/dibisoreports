@@ -143,7 +143,7 @@ REPORT_SECTIONS: Dict[str, list] = {
         {"id": "private_sector_collaborations", "label": "Collaborations secteur privé"},
         {"id": "european_projects",             "label": "Projets européens"},
         {"id": "anr_projects",                  "label": "Projets ANR"},
-        {"id": "data",           "label": "Jeux de données partagés","figure": False},
+        {"id": "data",           "label": "Jeux de données partagés","figure": True},
         {"id": "strengths",      "label": "Atouts du laboratoire",  "figure": False},
         {"id": "recommendations","label": "Préconisations",         "figure": False},
     ],

@@ -12,6 +12,7 @@ from dibisoplot.biso.biso import OpenAccessWorks
 from dibisoplot.biso.biso import PrivateSectorCollaborations
 from dibisoplot.biso.biso import WorksBibtex
 from dibisoplot.biso.biso import WorksType
+from dibisoplot.biso.biso import Data
 
 __all__ = [
     "Biso",
@@ -28,4 +29,5 @@ __all__ = [
     "PrivateSectorCollaborations",
     "WorksBibtex",
     "WorksType",
+    "Data"
 ]

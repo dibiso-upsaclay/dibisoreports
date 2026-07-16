@@ -26,8 +26,9 @@
   {% if figures.collaboration_map_europe is defined and 'collaboration_map_europe' not in removed_sections %}<li><a href="#collaboration-map-europe">Carte des collaborations européennes</a></li>{% endif %}
   {% if figures.collaboration_names is defined and 'collaboration_names' not in removed_sections %}<li><a href="#collaboration-names">Collaborations internationales par établissements</a></li>{% endif %}
   {% if figures.private_sector_collaborations is defined and 'private_sector_collaborations' not in removed_sections %}<li><a href="#private-sector">Collaborations avec le secteur privé</a></li>{% endif %}
-  {% if (figures.european_projects is defined and 'european_projects' not in removed_sections) or (figures.anr_projects is defined and 'anr_projects' not in removed_sections) %}<li><a href="#european-anr-projects">Publications liées à des projets de recherche</a></li>{% endif %}
-  {% if 'data' not in removed_sections %}<li><a href="#data">Jeux de données partagés</a></li>{% endif %}
+  {% if figures.european_projects is defined and 'european_projects' not in removed_sections %}<li><a href="#european-projects">Projets européens</a></li>{% endif %}
+  {% if figures.anr_projects is defined and 'anr_projects' not in removed_sections %}<li><a href="#anr-projects">Projets ANR</a></li>{% endif %}
+  {% if figures.data is defined and 'data' not in removed_sections %}<li><a href="#data">Jeux de données partagés</a></li>{% endif %}
   {% if 'strengths' not in removed_sections %}<li><a href="#strengths">Atouts du laboratoire</a></li>{% endif %}
   {% if 'recommendations' not in removed_sections %}<li><a href="#recommendations">Préconisations</a></li>{% endif %}
 {% endblock %}
@@ -58,7 +59,7 @@
 <section id="journals-hal" data-section="journals_hal">
   <h2>Liste des revues</h2>
   {{ figures.journals_hal | safe }}
-  {% if journalshalinfo is defined and journalshalinfo %}<p class="dibiso-info">{{ journalshalinfo }}</p>{% endif %}
+  {% if journalshalinfo is defined and journalshalinfo %}<p class="dibiso-info">{{ journalshalinfo | safe }}</p>{% endif %}
   {% if analyses.journals_hal is defined and analyses.journals_hal %}
   <div class="analysis">{{ analyses.journals_hal | safe }}</div>
   {% endif %}
@@ -139,17 +140,6 @@
   <p>Ce tableau utilise des données du Baromètre français de la Science Ouverte. Ces données sont compilées le dernier trimestre de chaque année (généralement en décembre), sur les données de l'année précédente. Ainsi, le tableau montre le nombre de publications en accès ouvert lors du trimestre {{ reportyear | default('') }}Q4.</p>
   {% if bsojournalsnbworks is defined and bsojournalsnbworksfoundinbso is defined and bsojournalsnbworks and bsojournalsnbworksfoundinbso %}<p><strong>Il existe généralement un déficit de couverture d'environ 30&nbsp;% par rapport à HAL&nbsp;: sur {{ bsojournalsnbworks }} travaux dans HAL, {{ bsojournalsnbworksfoundinbso }} ont été trouvées dans le BSO.</strong></p>{% endif %}
   <p>La colonne « APC payés » indique le montant de frais APC détecté comme payé par le BSO. Comme toute donnée collectée à travers de multiples sources hétérogènes, certaines données peuvent être manquantes ou inexactes, mais permettent néanmoins d'avoir un aperçu général de l'ouverture de la production scientifique.</p>
-  
-  <p>
-    <strong>Légende :</strong> 
-    D = Diamond | 
-    Go = Gold | 
-    HO = Hybrid Ouvert | 
-    HNO = Hybrid Non Ouvert | 
-    X = Pas d'accès | 
-    ? = Autre
-  </p>                                                        
-  
   {{ figures.journals | safe }}
   {% if journalsinfo is defined and journalsinfo %}<p class="dibiso-info">{{ journalsinfo }}</p>{% endif %}
   {% if analyses.journals is defined and analyses.journals %}
@@ -206,34 +196,28 @@
 </section>
 {% endif %}
 
-{# ── 12 & 13. Projets de recherche (Européens et ANR) ───────────────── #}
-{% if (figures.european_projects is defined and 'european_projects' not in removed_sections) or (figures.anr_projects is defined and 'anr_projects' not in removed_sections) %}
-<section id="european-anr-projects">
-  <h2>Publications liées à des projets de recherche</h2>
-  <p>Cette section rassemble les productions scientifiques du laboratoire adossées à des contrats de recherche nationaux et internationaux.</p>
-
-  {# ── Sous-section autonome : Projets Européens ── #}
-  {% if figures.european_projects is defined and 'european_projects' not in removed_sections %}
-  <section id="european-projects" data-section="european_projects" style="margin-bottom: 40px;">
-    <h3>Projets européens</h3>
-    {{ figures.european_projects | safe }}
-    {% if europeanprojectsinfo is defined and europeanprojectsinfo %}<p class="dibiso-info">{{ europeanprojectsinfo }}</p>{% endif %}
-    {% if analyses.european_projects is defined and analyses.european_projects %}
-    <div class="analysis">{{ analyses.european_projects | safe }}</div>
-    {% endif %}
-  </section>
+{# ── Sous-section autonome : Projets Européens ── #}
+{% if figures.european_projects is defined and 'european_projects' not in removed_sections %}
+<section id="european-projects" data-section="european_projects" style="margin-bottom: 40px;">
+  <h2>Projets européens</h2>
+  {{ figures.european_projects | safe }}
+  {% if europeanprojectsinfo is defined and europeanprojectsinfo %}<p class="dibiso-info">{{ europeanprojectsinfo }}</p>{% endif %}
+  {% if analyses.european_projects is defined and analyses.european_projects %}
+  <div class="analysis">{{ analyses.european_projects | safe }}</div>
   {% endif %}
+</section>
+{% endif %}
 
-  {# ── Sous-section autonome : Projets ANR ── #}
-  {% if figures.anr_projects is defined and 'anr_projects' not in removed_sections %}
-  <section id="anr-projects" data-section="anr_projects">
-    <h3>Projets ANR</h3>
-    {{ figures.anr_projects | safe }}
-    {% if anrprojectsinfo is defined and anrprojectsinfo %}<p class="dibiso-info">{{ anrprojectsinfo }}</p>{% endif %}
-    {% if analyses.anr_projects is defined and analyses.anr_projects %}
-    <div class="analysis">{{ analyses.anr_projects | safe }}</div>
-    {% endif %}
-  </section>
+{# ── Sous-section autonome : Projets ANR ── #}
+{% if figures.anr_projects is defined and 'anr_projects' not in removed_sections %}
+<section id="anr-projects" data-section="anr_projects">
+  <h2 {% if figures.european_projects is defined and 'european_projects' not in removed_sections %}style="page-break-before: avoid;"{% endif %}>
+    Projets ANR
+  </h2>
+  {{ figures.anr_projects | safe }}
+  {% if anrprojectsinfo is defined and anrprojectsinfo %}<p class="dibiso-info">{{ anrprojectsinfo }}</p>{% endif %}
+  {% if analyses.anr_projects is defined and analyses.anr_projects %}
+  <div class="analysis">{{ analyses.anr_projects | safe }}</div>
   {% endif %}
 </section>
 {% endif %}
@@ -242,12 +226,21 @@
 {% if 'data' not in removed_sections %}
 <section id="data" data-section="data">
   <h2>Jeux de données partagés</h2>
-  <p>Un guichet unique est à votre disposition pour vous accompagner sur toutes les questions en lien avec les données de la recherche&nbsp;: <a href="mailto:donnees-recherche@universite-paris-saclay.fr">donnees-recherche@universite-paris-saclay.fr</a></p>
+  <p>Un guichet unique est à votre disposition pour vous accompagner sur toutes les questions en lien avec les données de la recherche : <a href="mailto:donnees-recherche@universite-paris-saclay.fr">donnees-recherche@universite-paris-saclay.fr</a></p>
+  {% if bsodatasetsphrase is defined and bsodatasetsphrase %}
+    <div class="analysis"><p><strong>{{ bsodatasetsphrase }}</strong></p></div>
+  {% endif %}
+  {% if figures.data is defined and figures.data %}
+    <div class="figure-container">
+      {{ figures.data | safe }}
+    </div>
+  {% endif %}
   {% if analyses.data is defined and analyses.data %}
-  <div class="analysis">{{ analyses.data | safe }}</div>
+    <div class="analysis">{{ analyses.data | safe }}</div>
   {% endif %}
 </section>
 {% endif %}
+
 
 {# ── 15. Atouts du laboratoire ───────────────────────────────── #}
 {% if 'strengths' not in removed_sections %}
