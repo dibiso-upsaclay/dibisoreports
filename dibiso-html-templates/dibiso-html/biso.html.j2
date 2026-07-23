@@ -242,6 +242,7 @@
     <p><strong>{{ bsodatasetsphrase }}</strong></p>
   {% endif %}
   {% if figures.data is defined and figures.data %}
+      <p>Les graphiques ci-dessous présentent les jeux de données associés à un identifiant ROR de laboratoire (source : Datacite). Ils ne sont pas associés à un article en particulier.</p>
       {{ figures.data | safe }}
   {% endif %}
   {% if analyses.data is defined and analyses.data %}
