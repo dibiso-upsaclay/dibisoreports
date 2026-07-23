@@ -113,6 +113,7 @@ class ReportRequest(BaseModel):
     entity_acronym: str = Field(..., min_length=1, description="Laboratory acronym")
     entity_full_name: str = Field(..., min_length=1, description="Full laboratory name")
     entity_id: str = Field(..., min_length=1, description="HAL collection ID")
+    ror_id: Optional[str] = Field(..., description="Optional ROR ID")
     max_entities: int = Field(..., ge=1, le=10000, description="Max entities to use for maps")
     reporter: str = Field("", description="Name of the person writing the report")
     reporter_email: str = Field("", description="Email of the reporter")
@@ -143,7 +144,7 @@ REPORT_SECTIONS: Dict[str, list] = {
         {"id": "private_sector_collaborations", "label": "Collaborations secteur privé"},
         {"id": "european_projects",             "label": "Projets européens"},
         {"id": "anr_projects",                  "label": "Projets ANR"},
-        {"id": "data",           "label": "Jeux de données partagés","figure": True},
+        {"id": "data",           "label": "Jeux de données partagés"},
         {"id": "strengths",      "label": "Atouts du laboratoire",  "figure": False},
         {"id": "recommendations","label": "Préconisations",         "figure": False},
     ],
@@ -771,6 +772,7 @@ def generate_report_project(comp_id: str, request_data: ReportRequest) -> Option
         _acronym = _json.dumps(request_data.entity_acronym)
         _fullname = _json.dumps(request_data.entity_full_name)
         _entity_id = _json.dumps(request_data.entity_id)
+        _ror_id = _json.dumps(request_data.ror_id)
         _reporter = _json.dumps(request_data.reporter)
         _reporter_email = _json.dumps(request_data.reporter_email)
         _template_variant = _json.dumps(request_data.template_variant)
@@ -796,6 +798,7 @@ biso_reporting = Biso(
     {request_data.year},
     entity_acronym={_acronym},
     entity_full_name={_fullname},
+    ror_id={_ror_id},
     html_template_path={_html_path} if {_html_path} != "None" else None,
     html_template_url={_html_tpl} if {_html_path} == "None" else None,
     max_entities={request_data.max_entities},

@@ -12,6 +12,7 @@ from openalex_analysis.data import InstitutionsData, WorksData
 import numpy as np
 import pandas as pd
 import plotly.express as px
+from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import requests
 from elasticsearch import Elasticsearch
@@ -485,8 +486,15 @@ class AnrProjects(Biso):
             self.n_entities_found = (res.get('stats', {}).get('stats_fields', {}).get('anrProjectAcronym_s', {}).
                                      get('cardinality', 0))
             anr_projects_list = res.get('facet_counts', {}).get('facet_fields', {}).get('anrProjectAcronym_s', [])
-            self.data = {anr_projects_list[i]: anr_projects_list[i + 1] for i in range(0, len(anr_projects_list), 2)}
+            raw_data = {anr_projects_list[i]: anr_projects_list[i + 1] for i in range(0, len(anr_projects_list), 2)}
             # sort values
+            self.data = {}
+            for k, v in raw_data.items():
+                if re.search(r"^Universit", k, re.IGNORECASE):
+                    new_key = "Autres projets"
+                    self.data[new_key] = self.data.get(new_key, 0) + v
+                else:
+                    self.data[k] = v
             self.data = {k: v for k, v in sorted(self.data.items(), key=lambda item: item[1])}
             if not self.data:
                 self.data_status = DataStatus.NO_DATA
@@ -497,7 +505,6 @@ class AnrProjects(Biso):
         except Exception as e:
             return self._handle_fetch_error(e, "Error fetching or formatting ANR projects data")
 
-# TODO : essayer de factoriser avec chapters (et autres si possible).
 class Books(Biso):
     """
     A class to fetch and generate a table of books (ouvrages).
@@ -1251,9 +1258,16 @@ class EuropeanProjects(Biso):
             self.n_entities_found = (res.get('stats', {}).get('stats_fields', {}).get('europeanProjectAcronym_s', {}).
                                      get('cardinality', 0))
             eu_projects_list=res.get('facet_counts', {}).get('facet_fields', {}).get('europeanProjectAcronym_s', [])
-            self.data = {eu_projects_list[i]: eu_projects_list[i + 1] for i in range(0, len(eu_projects_list), 2)
+            raw_data = {eu_projects_list[i]: eu_projects_list[i + 1] for i in range(0, len(eu_projects_list), 2)
                          if eu_projects_list[i + 1] != 0}
             # sort values
+            self.data = {}
+            for k, v in raw_data.items():
+                if re.search(r"^Universit", k, re.IGNORECASE):
+                    new_key = "Autres projets"
+                    self.data[new_key] = self.data.get(new_key, 0) + v
+                else:
+                    self.data[k] = v
             self.data = {k: v for k, v in sorted(self.data.items(), key=lambda item: item[1])}
             if not self.data:
                 self.data_status = DataStatus.NO_DATA
@@ -1269,11 +1283,11 @@ class Journals(Biso):
     """
     A class to fetch and generate a table of journals.
     """
-
+    # table to correct values ​​of bso
     COLOR_RULES = [
         {"oa_color": "other",     "is_oa": True, "journal_is_oa": False,  "has_apc": ["missing", "zero", "numeric"], "color_final": "hybrid"},
         
-        {"oa_color": "other",     "is_oa": True, "journal_is_oa": True,   "has_apc": "missing",  "color_final": "other"}, #Useless, kept in case of future decision
+        {"oa_color": "other",     "is_oa": True, "journal_is_oa": True,   "has_apc": "missing",  "color_final": "other"},
         {"oa_color": "other",     "is_oa": True, "journal_is_oa": True,   "has_apc": "zero",  "color_final": "diamond"},
         {"oa_color": "other",     "is_oa": True, "journal_is_oa": True,   "has_apc": "numeric",  "color_final": "gold"},
         
@@ -1331,13 +1345,19 @@ class Journals(Biso):
             return None
         
         def format_color(row) -> str:
+            """
+            Uses the color to determine open access on journal
+            Open : diamond, gold, hybrid with apc paid
+            Closed : hybrid with 0 apc paid and closed papers
+            """
             color = row["color_final"] if pd.notna(row["color_final"]) else row["oa_color"]
             if pd.isna(color):
                 return f"{self.svg_other}" # "❓"
             if color=="hybrid":
                 if row["has_apc"]=="numeric":
                     return f"{self.svg_check}" # "✅"
-                # CLOSED si apc=zero ???
+                if row["has_apc"]=="zero":
+                    return f"{self.svg_closed}" # "❌"
             if color in ["gold", "diamond"]:
                 return f"{self.svg_check}" # "✅"
             if color=="closed":
@@ -2100,22 +2120,23 @@ class Data(Biso):
     """
     A class to fetch data about shared datasets from the BSO index and the DataCite API
     """
-    figure_file_extension = "tex"
-    html_figure_type = "html_table"
+    figure_file_extension = "pdf"
+    html_figure_type = "plotly"
 
-    def __init__(self, entity_id: str, year: int | None = None, **kwargs):
+    def __init__(self, entity_id: str, year: int | None = None, ror_id: str | None = None,**kwargs):
         """
         Initialize the Data class.
         """
         super().__init__(entity_id, year, **kwargs)
+        self.ror_id = ror_id
 
     def fetch_data(self) -> dict[str, Any]:
         """
-        À développer
+        Fetch number of datasets from scanr bso
+        Fetch datasets by publishers/licenses from DataCite
         """
         try:
-            # ------------------------ BSO -------------------------
-
+            # BSO
             if self.scanr_api_url is None:
                 self.data_status = DataStatus.ERROR
                 stats = {
@@ -2127,8 +2148,9 @@ class Data(Biso):
                 }
                 return stats
 
-            doi_ids = self.get_all_ids_with_cursor(id_type="doi")
-            hal_ids = self.get_all_ids_with_cursor(id_type="hal")
+            # Taking only articles from bso
+            doi_ids = self.get_all_ids_with_cursor(id_type="doi", doc_types=["ART"])
+            hal_ids = self.get_all_ids_with_cursor(id_type="hal", doc_types=["ART"])
             
             doi_ids = [f"doi{doi_id}" for doi_id in doi_ids]
             hal_ids = [f"hal{hal_id}" for hal_id in hal_ids]
@@ -2161,7 +2183,7 @@ class Data(Biso):
             percentage_shared_on_found = (nb_shared_datasets / nb_found_datasets * 100) if nb_found_datasets > 0 else 0.0
 
             bso_datasets_phrase = (
-                f"Sur un total de {total_bso_pubs} publications présentes dans le BSO, "
+                f"Sur un total de {total_bso_pubs} publications présentes dans le BSO sur l'année {self.year}, "
                 f"l'information sur les données a été détectée pour {nb_found_datasets} d'entre elles ({percentage_found:.0f}% des publications). "
                 f"Parmi ces publications, {nb_shared_datasets}/{nb_found_datasets} ont effectivement partagé un jeu de données "
                 f"({percentage_shared_on_found:.0f}% des publications détectées)."
@@ -2173,82 +2195,139 @@ class Data(Biso):
             else:
                 self.data_status = DataStatus.OK
 
-            # ---------------------- DATACITE ----------------------
+            # DataCite
 
-            institution_ror="https://ror.org/03xjwb503" # ROR UPS en attendant qu'il soit récupéré depuis l'appli
-            url = (
-                f"https://api.datacite.org/dois?resource-type-id=dataset"
-                f"&affiliation-id={institution_ror}"
-                f"&query=!relatedIdentifiers.relationType:IsVersionOf"
-                f"&registered={self.year}"
-                f"&page[size]=1000"
-            )
-            response = requests.get(url)
-            response.raise_for_status()
-            datacite_data = response.json()
+            if self.ror_id:
+                institution_ror = self.ror_id if self.ror_id.startswith("https://ror.org/") else f"https://ror.org/{self.ror_id}"
+                url = (
+                    f"https://api.datacite.org/dois?resource-type-id=dataset"
+                    f"&affiliation-id={institution_ror}"
+                    f"&query=!relatedIdentifiers.relationType:IsVersionOf"
+                    f"&registered={self.year}"
+                    f"&page[size]=1000"
+                )
+                response = requests.get(url)
+                response.raise_for_status()
+                datacite_data = response.json()
 
-            datacite_nb_datasets_found = datacite_data.get('meta', {}).get('total', 0)
-            datacite_datasets = datacite_data.get('data', [])
+                datacite_nb_datasets_found = datacite_data.get('meta', {}).get('total', 0)
+                datacite_datasets = datacite_data.get('data', [])
 
-            raw_data=[]
+                publishers=[]
+                licenses=[]
 
-            for dataset in datacite_datasets:
-                dataset_attributes = dataset.get('attributes', {})
+                for dataset in datacite_datasets:
+                    attributes = dataset.get('attributes', {})
 
-                dataset_publisher = dataset_attributes.get('publisher','Unknown')
+                    publishers.append(attributes.get('publisher','Unknown'))
 
-                rights_list=dataset_attributes.get('rightsList', [])
-                dataset_license = "Unknown"
-                if rights_list and isinstance(rights_list, list):
-                    dataset_license = rights_list[0].get('rightsIdentifier', 'Unknown')
+                    rights_list=attributes.get('rightsList', [])
+                    if rights_list and isinstance(rights_list, list):
+                        license_id = rights_list[0].get('rightsIdentifier', '')
+                    if re.search(r"CC.{0,3}?BY", license_id, re.IGNORECASE):
+                        licenses.append("CC-BY")
+                    elif re.search(r"CC.{0,3}?0", license_id, re.IGNORECASE):
+                        licenses.append("CC0")
+                    else:
+                        licenses.append("others")
 
-                raw_data.append({
-                    "publisher": dataset_publisher,
-                    "license": dataset_license
-                })
+                # Keeps only the 5 principal publishers (rest goes to "others")
+                pub_dict = {p: publishers.count(p) for p in set(publishers)}
+                pub_sorted = [(p, count) for count, p in sorted([(count, p) for p, count in pub_dict.items()], reverse=True)]
+                top_5 = pub_sorted[:5]
+                others_total=sum(count for p, count in pub_sorted[5:])
+                self.grouped_publishers = [p for p, count in top_5]
+                self.counts_publishers = [count for p, count in top_5]
+                if others_total > 0:
+                    self.grouped_publishers.append("others")
+                    self.counts_publishers.append(others_total)
 
-            if raw_data:
-                df_raw=pd.DataFrame(raw_data)
-                self.data=df_raw.groupby("publisher").size().reset_index(name="nb_datasets").sort_values("nb_datasets", ascending=False)
-                self.data_status = DataStatus.OK
-            else:
-                self.data=pd.DataFrame(columns=["publisher", "nb_datasets"])
-                self.data_status = DataStatus.NO_DATA
+                self.grouped_licenses = list(set(licenses))
+                self.counts_licenses = [licenses.count(l) for l in self.grouped_licenses]
 
-            stats = {
+                if datacite_nb_datasets_found == 0 and total_bso_pubs == 0:
+                    self.data_status = DataStatus.NO_DATA
+                else:
+                    self.data_status = DataStatus.OK
+
+            self.generate_plot_info()
+            return {
                 'total_bso_pubs': total_bso_pubs,
                 'nb_found_datasets': nb_found_datasets,
                 'bso_datasets_phrase': bso_datasets_phrase,
-                'total_datacite_datasets': datacite_nb_datasets_found,
                 'info': self.info
             }
-            return stats
 
         except Exception as e:
             return self._handle_fetch_error(e, "Error fetching or formatting datasets data")
 
     def get_figure(self) -> str:
-        """
-        À développer
-        """
         if self.data_status == DataStatus.NOT_FETCHED:
             self.fetch_data()
-        if self.data_status == DataStatus.NO_DATA:
-            return self.get_no_data_html()
+        if self.data_status == DataStatus.NO_DATA or not self.ror_id:
+            return self.get_no_data_plot()
         if self.data_status == DataStatus.ERROR:
-            return self.get_error_html()
+            return self.get_error_plot()
         
-        df_to_plot=self.data.copy(deep=True)
-        df_to_plot = df_to_plot.rename(columns={
-            "publisher": self._("Repository"),
-            "nb_datasets": self._("Number of datasets")
-        })
-
-        return self.dataframe_to_html_table(
-            df_to_plot,
-            caption=(
-                self._("Distribution of DataCite datasets by repository")+f" ({self.year})"
+        fig=make_subplots(
+            rows=2, cols=1,
+            subplot_titles=(
+                f"{self._('Distribution of datasets by repository')} ({self.year} source: DataCite)",
+                f"{self._('Distribution of datasets by license')} ({self.year} source: DataCite)"
             ),
-            label="datasets",
-            max_plotted_entities=self.max_plotted_entities
+            vertical_spacing=0.2
         )
+        bar_width_val = 0.5
+
+        # plot by publishers
+        fig.add_trace(
+            go.Bar(
+                x=self.counts_publishers,
+                y=self.grouped_publishers,
+                marker_color=self.main_color,
+                orientation='h',
+                showlegend=False,
+                width=bar_width_val,
+                text=self.counts_publishers,
+                textposition=self.text_position if hasattr(self, 'text_position') else "outside",
+                cliponaxis=False
+            ),
+            row=1, col=1
+        )
+
+        # plot by licenses
+        fig.add_trace(
+            go.Bar(
+                x=self.counts_licenses,
+                y=self.grouped_licenses,
+                marker_color=self.main_color,
+                orientation='h',
+                showlegend=False,
+                width=bar_width_val,
+                text=self.counts_licenses,
+                textposition=self.text_position if hasattr(self, 'text_position') else "outside",
+                cliponaxis=False
+            ),
+            row=2, col=1
+        )
+
+        fig.update_layout(
+            width=self.width,
+            height=self.height if self.height else 600,
+            margin=self.margin,
+            template=self.template if hasattr(self, 'template') else "simple_white",
+            barmode='stack',
+            barcornerradius=self.barcornerradius if hasattr(self, 'barcornerradius') else 10,
+            showlegend=False,
+            margin_t=30
+        )
+
+        # orders plots (with "others" to the end)
+        custom_order = list(reversed(self.grouped_publishers))
+        if "others" in custom_order:
+            custom_order.remove("others")
+            custom_order.insert(0, "others")
+        fig.update_yaxes(categoryorder='array', categoryarray=custom_order, row=1, col=1)
+        fig.update_yaxes(categoryorder="array", categoryarray=["others", "CC0", "CC-BY"], row=2, col=1)
+
+        return fig

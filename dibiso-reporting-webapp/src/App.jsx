@@ -66,6 +66,9 @@ const TRANSLATIONS = {
     halCollectionId: "HAL collection ID",
     halDescription: "The HAL collection ID used to fetch the data.",
     halPlaceholder: "e.g., LABORATOIRE-EXEMPLE",
+    rorLabel: "ROR ID (Optional for datasets)",
+    rorDesc: "Used to fetch shared datasets from DataCite.",
+    rorPlaceholder: "e.g., https://ror.org/03xjwb503",
     labAcronym: "Lab Acronym",
     labAcronymDescription: "The laboratory acronym that will be displayed on the title page.",
     labAcronymPlaceholder: "e.g., LABO",
@@ -223,6 +226,9 @@ const TRANSLATIONS = {
     halCollectionId: "Identifiant de collection HAL",
     halDescription: "L'identifiant de collection HAL utilisé pour récupérer les données.",
     halPlaceholder: "ex. LABORATOIRE-EXEMPLE",
+    rorLabel: "Identifiant ROR (Optionnel pour les jeux de données)",
+    rorDesc: "Sert à récupérer les jeux de données partagés depuis DataCite.",
+    rorPlaceholder: "ex. https://ror.org/03xjwb503",
     labAcronym: "Acronyme du laboratoire",
     labAcronymDescription: "L'acronyme du laboratoire affiché sur la page de titre.",
     labAcronymPlaceholder: "ex. LABO",
@@ -343,6 +349,7 @@ const ReportGeneratorInterface = () => {
     entityAcronym: '',
     entityFullName: '',
     entityId: '',
+    rorId: '',
     maxEntities: 1000,
     reporter: '',
     reporterEmail: '',
@@ -921,6 +928,7 @@ const ReportGeneratorInterface = () => {
           entity_acronym: formData.entityAcronym,
           entity_full_name: formData.entityFullName,
           entity_id: formData.entityId,
+          ror_id: formData.rorId,
           max_entities: formData.maxEntities,
           reporter: formData.reporter,
           reporter_email: formData.reporterEmail,
@@ -1896,6 +1904,24 @@ const ReportGeneratorInterface = () => {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                     placeholder={tr.halPlaceholder}
+                  />
+                </div>
+                {/* ROR ID Input */}
+                <div>
+                  <label htmlFor="rorId" className="block text-sm font-medium text-gray-300 mb-2">
+                    {tr.rorLabel}
+                    <span className="text-gray-500 font-light"> <br/>
+                      {tr.rorDesc}
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    id="rorId"
+                    name="rorId"
+                    value={formData.rorId}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    placeholder={tr.rorPlaceholder}
                   />
                 </div>
                 {/* Lab Acronym Input */}

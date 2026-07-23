@@ -15,11 +15,11 @@
 
 {% block toc_entries %}
   <li><a href="#introduction">Introduction</a></li>
+  {% if figures.works_type is defined and 'works_type' not in removed_sections %}<li><a href="#works-type">Typologie de la production scientifique</a></li>{% endif %}
   {% if figures.journals_hal is defined and 'journals_hal' not in removed_sections %}<li><a href="#journals-hal">Liste des revues</a></li>{% endif %}
   {% if figures.conferences is defined and 'conferences' not in removed_sections %}<li><a href="#conferences">Liste des conférences</a></li>{% endif %}
   {% if figures.books is defined and 'books' not in removed_sections %}<li><a href="#books">Liste des ouvrages</a></li>{% endif %}
   {% if figures.chapters is defined and 'chapters' not in removed_sections %}<li><a href="#chapters">Liste des chapitres</a></li>{% endif %}
-  {% if figures.works_type is defined and 'works_type' not in removed_sections %}<li><a href="#works-type">Typologie de la production scientifique</a></li>{% endif %}
   {% if figures.open_access_works is defined and 'open_access_works' not in removed_sections %}<li><a href="#open-access-works">Articles en accès ouvert</a></li>{% endif %}
   {% if figures.journals is defined and 'journals' not in removed_sections %}<li><a href="#journals">Revues et voies d'accès ouvert (BSO)</a></li>{% endif %}
   {% if figures.collaboration_map_world is defined and 'collaboration_map_world' not in removed_sections %}<li><a href="#collaboration-map-world">Carte des collaborations internationales</a></li>{% endif %}
@@ -54,55 +54,7 @@
   <p>La loi pour la République Numérique permet aux auteurs travaillant dans une institution publique en France depuis 2016, de partager le postprint sur HAL, avec un embargo de 6&nbsp;mois pour les disciplines STM et 1&nbsp;an pour les SHS.</p>
 </section>
 
-{# ── 2. Liste des revues (HAL) ───────────────────────────────── #}
-{% if figures.journals_hal is defined and 'journals_hal' not in removed_sections %}
-<section id="journals-hal" data-section="journals_hal">
-  <h2>Liste des revues</h2>
-  {{ figures.journals_hal | safe }}
-  {% if journalshalinfo is defined and journalshalinfo %}<p class="dibiso-info">{{ journalshalinfo | safe }}</p>{% endif %}
-  {% if analyses.journals_hal is defined and analyses.journals_hal %}
-  <div class="analysis">{{ analyses.journals_hal | safe }}</div>
-  {% endif %}
-</section>
-{% endif %}
-
-{# ── 3. Liste des conférences ────────────────────────────────── #}
-{% if figures.conferences is defined and 'conferences' not in removed_sections %}
-<section id="conferences" data-section="conferences">
-  <h2>Liste des conférences</h2>
-  {{ figures.conferences | safe }}
-  {% if conferencesinfo is defined and conferencesinfo %}<p class="dibiso-info">{{ conferencesinfo }}</p>{% endif %}
-  {% if analyses.conferences is defined and analyses.conferences %}
-  <div class="analysis">{{ analyses.conferences | safe }}</div>
-  {% endif %}
-</section>
-{% endif %}
-
-{# ── 4. Liste des ouvrages ───────────────────────────────────── #}
-{% if figures.books is defined and 'books' not in removed_sections %}
-<section id="books" data-section="books">
-  <h2>Liste des ouvrages</h2>
-  {{ figures.books | safe }}
-  {% if booksinfo is defined and booksinfo %}<p class="dibiso-info">{{ booksinfo }}</p>{% endif %}
-  {% if analyses.books is defined and analyses.books %}
-  <div class="analysis">{{ analyses.books | safe }}</div>
-  {% endif %}
-</section>
-{% endif %}
-
-{# ── 4. Liste des chapitres ──────────────────────────────────── #}
-{% if figures.chapters is defined and 'chapters' not in removed_sections %}
-<section id="chapters" data-section="chapters">
-  <h2>Liste des chapitres</h2>
-  {{ figures.chapters | safe }}
-  {% if chaptersinfo is defined and chaptersinfo %}<p class="dibiso-info">{{ chaptersinfo }}</p>{% endif %}
-  {% if analyses.chapters is defined and analyses.chapters %}
-  <div class="analysis">{{ analyses.chapters | safe }}</div>
-  {% endif %}
-</section>
-{% endif %}
-
-{# ── 5. Typologie ────────────────────────────────────────────── #}
+{# ── 2. Typologie ────────────────────────────────────────────── #}
 {% if figures.works_type is defined and 'works_type' not in removed_sections %}
 <section id="works-type" data-section="works_type">
   <h2>Typologie de la production scientifique</h2>
@@ -114,7 +66,55 @@
 </section>
 {% endif %}
 
-{# ── 6. Articles en accès ouvert ─────────────────────────────── #}
+{# ── 3. Liste des revues (HAL) ───────────────────────────────── #}
+{% if figures.journals_hal is defined and 'journals_hal' not in removed_sections %}
+<section id="journals-hal" data-section="journals_hal">
+  <h2>Liste des revues</h2>
+  {{ figures.journals_hal | safe }}
+  {% if journalshalinfo is defined and journalshalinfo %}<p class="dibiso-info">{{ journalshalinfo | safe }}</p>{% endif %}
+  {% if analyses.journals_hal is defined and analyses.journals_hal %}
+  <div class="analysis">{{ analyses.journals_hal | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── 4. Liste des conférences ────────────────────────────────── #}
+{% if figures.conferences is defined and 'conferences' not in removed_sections %}
+<section id="conferences" data-section="conferences">
+  <h2>Liste des conférences</h2>
+  {{ figures.conferences | safe }}
+  {% if conferencesinfo is defined and conferencesinfo %}<p class="dibiso-info">{{ conferencesinfo }}</p>{% endif %}
+  {% if analyses.conferences is defined and analyses.conferences %}
+  <div class="analysis">{{ analyses.conferences | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── 5. Liste des ouvrages ───────────────────────────────────── #}
+{% if figures.books is defined and 'books' not in removed_sections %}
+<section id="books" data-section="books">
+  <h2>Liste des ouvrages</h2>
+  {{ figures.books | safe }}
+  {% if booksinfo is defined and booksinfo %}<p class="dibiso-info">{{ booksinfo }}</p>{% endif %}
+  {% if analyses.books is defined and analyses.books %}
+  <div class="analysis">{{ analyses.books | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── 6. Liste des chapitres ──────────────────────────────────── #}
+{% if figures.chapters is defined and 'chapters' not in removed_sections %}
+<section id="chapters" data-section="chapters">
+  <h2>Liste des chapitres</h2>
+  {{ figures.chapters | safe }}
+  {% if chaptersinfo is defined and chaptersinfo %}<p class="dibiso-info">{{ chaptersinfo }}</p>{% endif %}
+  {% if analyses.chapters is defined and analyses.chapters %}
+  <div class="analysis">{{ analyses.chapters | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── 7. Articles en accès ouvert ─────────────────────────────── #}
 {% if figures.open_access_works is defined and 'open_access_works' not in removed_sections %}
 <section id="open-access-works" data-section="open_access_works">
   <h2>Articles et Communications de congrès en accès ouvert</h2>
@@ -133,12 +133,12 @@
 </section>
 {% endif %}
 
-{# ── 7. Revues et voies d'accès (BSO) ───────────────────────── #}
+{# ── 8. Revues et voies d'accès (BSO) ───────────────────────── #}
 {% if figures.journals is defined and 'journals' not in removed_sections %}
 <section id="journals" data-section="journals">
   <h2>Revues et voies d'accès ouvert (BSO) <span class="section-badge">bêta</span></h2>
   <p>Ce tableau utilise des données du Baromètre français de la Science Ouverte. Ces données sont compilées le dernier trimestre de chaque année (généralement en décembre), sur les données de l'année précédente. Ainsi, le tableau montre le nombre de publications en accès ouvert lors du trimestre {{ reportyear | default('') }}Q4.</p>
-  {% if bsojournalsnbworks is defined and bsojournalsnbworksfoundinbso is defined and bsojournalsnbworks and bsojournalsnbworksfoundinbso %}<p><strong>Il existe généralement un déficit de couverture d'environ 30&nbsp;% par rapport à HAL&nbsp;: sur {{ bsojournalsnbworks }} travaux dans HAL, {{ bsojournalsnbworksfoundinbso }} ont été trouvées dans le BSO.</strong></p>{% endif %}
+  {% if bsojournalsnbworks is defined and bsojournalsnbworksfoundinbso is defined and bsojournalsnbworks and bsojournalsnbworksfoundinbso %}<p><strong>Il existe généralement un déficit de couverture d'environ 30&nbsp;% par rapport à HAL&nbsp;: sur {{ bsojournalsnbworks }} articles, {{ bsojournalsnbworksfoundinbso }} ont été trouvées dans le BSO.</strong></p>{% endif %}
   <p>La colonne « APC payés » indique le montant de frais APC détecté comme payé par le BSO. Comme toute donnée collectée à travers de multiples sources hétérogènes, certaines données peuvent être manquantes ou inexactes, mais permettent néanmoins d'avoir un aperçu général de l'ouverture de la production scientifique.</p>
   {{ figures.journals | safe }}
   {% if journalsinfo is defined and journalsinfo %}<p class="dibiso-info">{{ journalsinfo }}</p>{% endif %}
@@ -148,10 +148,11 @@
 </section>
 {% endif %}
 
-{# ── 8. Carte collaborations internationales ─────────────────── #}
+{# ── 9. Carte collaborations internationales ─────────────────── #}
 {% if figures.collaboration_map_world is defined and 'collaboration_map_world' not in removed_sections %}
 <section id="collaboration-map-world" data-section="collaboration_map_world">
   <h2>Carte des collaborations internationales</h2>
+  <p>Types de données récupérées : Articles et Communications</p>
   {{ figures.collaboration_map_world | safe }}
   {% if collaborationmapworldinfo is defined and collaborationmapworldinfo %}<p class="dibiso-info">{{ collaborationmapworldinfo }}</p>{% endif %}
   {% if analyses.collaboration_map_world is defined and analyses.collaboration_map_world %}
@@ -160,10 +161,11 @@
 </section>
 {% endif %}
 
-{# ── 9. Carte collaborations européennes ─────────────────────── #}
+{# ── 10. Carte collaborations européennes ─────────────────────── #}
 {% if figures.collaboration_map_europe is defined and 'collaboration_map_europe' not in removed_sections %}
 <section id="collaboration-map-europe" data-section="collaboration_map_europe">
   <h2>Carte des collaborations européennes</h2>
+  <p>Types de données récupérées : Articles et Communications</p>
   {{ figures.collaboration_map_europe | safe }}
   {% if collaborationmapeuropeinfo is defined and collaborationmapeuropeinfo %}<p class="dibiso-info">{{ collaborationmapeuropeinfo }}</p>{% endif %}
   {% if analyses.collaboration_map_europe is defined and analyses.collaboration_map_europe %}
@@ -172,10 +174,11 @@
 </section>
 {% endif %}
 
-{# ── 10. Collaborations par établissements ───────────────────── #}
+{# ── 11. Collaborations par établissements ───────────────────── #}
 {% if figures.collaboration_names is defined and 'collaboration_names' not in removed_sections %}
 <section id="collaboration-names" data-section="collaboration_names">
   <h2>Collaborations internationales par établissements</h2>
+  <p>Types de données récupérées : Articles et Communications</p>
   {{ figures.collaboration_names | safe }}
   {% if collaborationnamesinfo is defined and collaborationnamesinfo %}<p class="dibiso-info">{{ collaborationnamesinfo }}</p>{% endif %}
   {% if analyses.collaboration_names is defined and analyses.collaboration_names %}
@@ -184,10 +187,11 @@
 </section>
 {% endif %}
 
-{# ── 11. Collaborations secteur privé ────────────────────────── #}
+{# ── 12. Collaborations secteur privé ────────────────────────── #}
 {% if figures.private_sector_collaborations is defined and 'private_sector_collaborations' not in removed_sections %}
 <section id="private-sector" data-section="private_sector_collaborations">
   <h2>Collaborations avec le secteur privé <span class="section-badge">bêta</span></h2>
+  <p>Types de données récupérées : Articles et Communications</p>
   {{ figures.private_sector_collaborations | safe }}
   {% if privatesectorcollaborationsinfo is defined and privatesectorcollaborationsinfo %}<p class="dibiso-info">{{ privatesectorcollaborationsinfo }}</p>{% endif %}
   {% if analyses.private_sector_collaborations is defined and analyses.private_sector_collaborations %}
@@ -196,7 +200,7 @@
 </section>
 {% endif %}
 
-{# ── Sous-section autonome : Projets Européens ── #}
+{# ── 13. Sous-section autonome : Projets Européens ── #}
 {% if figures.european_projects is defined and 'european_projects' not in removed_sections %}
 <section id="european-projects" data-section="european_projects" style="margin-bottom: 40px;">
   <h2>Projets européens</h2>
@@ -208,7 +212,7 @@
 </section>
 {% endif %}
 
-{# ── Sous-section autonome : Projets ANR ── #}
+{# ── 14. Sous-section autonome : Projets ANR ── #}
 {% if figures.anr_projects is defined and 'anr_projects' not in removed_sections %}
 <section id="anr-projects" data-section="anr_projects">
   <h2 {% if figures.european_projects is defined and 'european_projects' not in removed_sections %}style="page-break-before: avoid;"{% endif %}>
@@ -222,18 +226,23 @@
 </section>
 {% endif %}
 
-{# ── 14. Jeux de données partagés ────────────────────────────── #}
+{# ── 15. Jeux de données partagés ────────────────────────────── #}
 {% if 'data' not in removed_sections %}
 <section id="data" data-section="data">
   <h2>Jeux de données partagés</h2>
   <p>Un guichet unique est à votre disposition pour vous accompagner sur toutes les questions en lien avec les données de la recherche : <a href="mailto:donnees-recherche@universite-paris-saclay.fr">donnees-recherche@universite-paris-saclay.fr</a></p>
   {% if bsodatasetsphrase is defined and bsodatasetsphrase %}
-    <div class="analysis"><p><strong>{{ bsodatasetsphrase }}</strong></p></div>
+    <p>Le BSO fouille le texte d'environ 40% des articles, 
+    pour identifier une mention d'un jeu de données associé à l'article et partagé en ligne. 
+    Il s'agit d'une mention dans le texte de l'article : l'existence de ces jeux de données n'est donc pas garantie. 
+    Par ailleurs, nos vérifications - en 2026 - suggèrent de nombreuses erreurs d'attribution. 
+    Voir aussi : <a href="https://barometredelascienceouverte.esr.gouv.fr/a-propos/methodologie">Baromètre de la science ouverte</a> 
+    et aussi <a href="https://hal.science/hal-04121339">HAL</a>
+    </p>
+    <p><strong>{{ bsodatasetsphrase }}</strong></p>
   {% endif %}
   {% if figures.data is defined and figures.data %}
-    <div class="figure-container">
       {{ figures.data | safe }}
-    </div>
   {% endif %}
   {% if analyses.data is defined and analyses.data %}
     <div class="analysis">{{ analyses.data | safe }}</div>
@@ -242,7 +251,7 @@
 {% endif %}
 
 
-{# ── 15. Atouts du laboratoire ───────────────────────────────── #}
+{# ── 16. Atouts du laboratoire ───────────────────────────────── #}
 {% if 'strengths' not in removed_sections %}
 <section id="strengths" data-section="strengths">
   <h2>Atouts du laboratoire dans son engagement pour la science ouverte</h2>
@@ -254,7 +263,7 @@
 </section>
 {% endif %}
 
-{# ── 16. Préconisations ──────────────────────────────────────── #}
+{# ── 17. Préconisations ──────────────────────────────────────── #}
 {% if 'recommendations' not in removed_sections %}
 <section id="recommendations" data-section="recommendations">
   <h2>Préconisations, pour aller plus loin</h2>

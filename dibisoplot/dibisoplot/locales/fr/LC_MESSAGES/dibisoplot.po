@@ -230,3 +230,11 @@ msgstr "Titre de l'ouvrage"
 #: biso/biso.py:965
 msgid "List of books entered in HAL"
 msgstr "Liste des ouvrages renseignés dans HAL"
+
+#: biso/biso.py:2060
+msgid "Distribution of datasets by repository"
+msgstr "Distribution des datasets par entrepôt"
+
+#: biso/biso.py:2061
+msgid "Distribution of datasets by license"
+msgstr "Distribution des datasets par licence"

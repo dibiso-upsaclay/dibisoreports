@@ -2,6 +2,7 @@ from datetime import datetime
 import logging
 
 import requests
+import copy
 
 from dibisoplot.biso import AnrProjects
 from dibisoplot.biso import Books
@@ -131,6 +132,7 @@ class Biso(DibisoReporting):
         "WorksType": [{}],
         "Data": [
             {
+                "ror_id": None,
                 "stats_to_save": {
                     "bso_datasets_phrase": "bsodatasetsphrase"
                 }
@@ -145,6 +147,7 @@ class Biso(DibisoReporting):
             year: int | None = None,
             entity_acronym: str = "",
             entity_full_name: str = "",
+            ror_id: str | None = None,
             html_template_path: str | None = None,
             html_template_url: str | None = None,
             max_entities: int | None = 1000,
@@ -208,12 +211,16 @@ class Biso(DibisoReporting):
             entity_acronym = str(entity_id)
         self.entity_acronym = entity_acronym
         self.entity_full_name = entity_full_name
+        self.ror_id=ror_id
         self.reporter = reporter
         self.reporter_email = reporter_email
         self.watermark_text = watermark_text
         self.language = language
 
         self.data_fetch_date = datetime.now().strftime("%d/%m/%Y")
+
+        self.default_visualizations = copy.deepcopy(self.__class__.default_visualizations)
+        self.default_visualizations["Data"][0]["ror_id"] = self.ror_id
 
         self.kwargs = kwargs
 
@@ -274,6 +281,7 @@ class Biso(DibisoReporting):
         self.macros_variables["language"] = self.language
         self.macros_variables["reportyear"] = str(self.year)
         self.macros_variables["halcollectionid"] = self.entity_id
+        self.macros_variables["ror_id"]=self.ror_id
         self.macros_variables["labacronym"] = self.entity_acronym
         self.macros_variables["labfullname"] = self.entity_full_name
         self.macros_variables["datafetchdate"] = self.data_fetch_date

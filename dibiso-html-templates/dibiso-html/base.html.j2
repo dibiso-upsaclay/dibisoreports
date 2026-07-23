@@ -61,7 +61,7 @@
     {# ── Contact ──────────────────────────────────────────────── #}
     <div class="last-page-section">
       <h3>Contactez-nous !</h3>
-      <p>Pour échanger à propos de ce rapport ou toute autre question liée à la science ouverte et vos publications, n'hésitez pas à contacter votre <strong>référent·e laboratoire</strong>{% if reporter is defined and reporter %} : <strong>{{ reporter }}</strong>{% if reporter_email is defined and reporter_email %} — <a href="mailto:{{ reporter_email }}">{{ reporter_email }}</a>{% endif %}{% endif %}.</p>
+      <p>Pour échanger à propos de ce rapport ou toute autre question liée à la science ouverte et vos publications, n'hésitez pas à contacter votre <strong>référent·e recherches et sciences ouvertes</strong>{% if reporter is defined and reporter %} : <strong>{{ reporter }}</strong>{% if reporter_email is defined and reporter_email %} — <a href="mailto:{{ reporter_email }}">{{ reporter_email }}</a>{% endif %}{% endif %}.</p>
     </div>
 
     {# ── Data sources ─────────────────────────────────────────── #}
@@ -98,25 +98,7 @@
       <ul class="tools-list">
         <li><img src="assets/icons/pypi.svg" class="icon-inline" alt="PyPI"><a href="https://pypi.org/project/dibisoplot/">dibisoplot</a>{% if dibisoplotversion is defined and dibisoplotversion %} v{{ dibisoplotversion }}{% endif %}</li>
         <li><img src="assets/icons/doi.svg" class="icon-inline" alt="DOI"><a href="https://doi.org/10.5281/zenodo.17251536">10.5281/zenodo.17251536</a></li>
-        <li><img src="assets/icons/github.svg" class="icon-inline" alt="GitHub"><a href="https://github.com/dibiso-upsaclay/dibisoplot">github.com/dibiso-upsaclay/dibisoplot</a></li>
-      </ul>
-
-      <p class="tools-category"><strong>Génération du rapport</strong></p>
-      <ul class="tools-list">
-        <li><img src="assets/icons/pypi.svg" class="icon-inline" alt="PyPI"><a href="https://pypi.org/project/dibisoreporting/">dibisoreporting</a>{% if dibisoreportingversion is defined and dibisoreportingversion %} v{{ dibisoreportingversion }}{% endif %}</li>
-        <li><img src="assets/icons/doi.svg" class="icon-inline" alt="DOI"><a href="https://doi.org/10.5281/zenodo.17251577">10.5281/zenodo.17251577</a></li>
-        <li><img src="assets/icons/github.svg" class="icon-inline" alt="GitHub"><a href="https://github.com/dibiso-upsaclay/dibisoreporting">github.com/dibiso-upsaclay/dibisoreporting</a></li>
-      </ul>
-
-      <p class="tools-category"><strong>Modèle HTML</strong></p>
-      <ul class="tools-list">
-        <li><img src="assets/icons/github.svg" class="icon-inline" alt="GitHub"><a href="https://github.com/dibiso-upsaclay/dibiso-html-templates">github.com/dibiso-upsaclay/dibiso-html-templates</a></li>
-      </ul>
-
-      <p class="tools-category"><strong>API &amp; application web</strong></p>
-      <ul class="tools-list">
-        <li><img src="assets/icons/github.svg" class="icon-inline" alt="GitHub"><a href="https://github.com/dibiso-upsaclay/dibiso-reporting-api">github.com/dibiso-upsaclay/dibiso-reporting-api</a></li>
-        <li><img src="assets/icons/github.svg" class="icon-inline" alt="GitHub"><a href="https://github.com/dibiso-upsaclay/dibiso-reporting-webapp">github.com/dibiso-upsaclay/dibiso-reporting-webapp</a></li>
+        <li><img src="assets/icons/github.svg" class="icon-inline" alt="GitHub"><a href="https://github.com/dibiso-upsaclay/dibisoreports">github.com/dibiso-upsaclay/dibisoreports</a></li>
       </ul>
 
       <p class="tools-category"><strong>Rapport technique</strong></p>
@@ -137,6 +119,7 @@
       <p>Programmation :
         Romain Thomas <a href="https://orcid.org/0009-0008-9900-1930" class="orcid-link" title="ORCID 0009-0008-9900-1930"><img src="assets/icons/orcid.svg" class="icon-orcid" alt="ORCID"></a>
       </p>
+      <p>Maintenance évolutive : Nicolas Legras & Clément Laverdet <a href="https://orcid.org/0000-0003-4466-3394" class="orcid-link" title="ORCID 0000-0003-4466-3394"><img src="assets/icons/orcid.svg" class="icon-orcid" alt="ORCID"></a></p>
     </div>
 
     {% endblock %}
