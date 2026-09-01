@@ -68,6 +68,21 @@ def get_bar_width(n_bars: int) -> int | float:
     return a * n_bars + b
 
 
+def get_readable_text_color(hex_color: str) -> str:
+    """
+    Pick black or white text for readability against a given background color.
+
+    :param hex_color: Background color as a hex string (e.g. "#00807A").
+    :type hex_color: str
+    :return: "white" or "black", whichever contrasts better against `hex_color`.
+    :rtype: str
+    """
+    hex_color = hex_color.lstrip("#")
+    r, g, b = (int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
+    luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+    return "black" if luminance > 140 else "white"
+
+
 def format_structure_name(struct_name: str, country_code: str) -> str:
     """
     Format the structure name by cropping if too long and adding a country flag.

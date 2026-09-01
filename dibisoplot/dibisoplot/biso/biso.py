@@ -17,12 +17,16 @@ import plotly.graph_objects as go
 import requests
 from elasticsearch import Elasticsearch
 
-from dibisoplot.utils import get_hal_doc_type_name, format_structure_name
+from dibisoplot.utils import get_hal_doc_type_name, format_structure_name, get_readable_text_color
 from dibisoplot.dibisoplot import DataStatus, Dibisoplot
 
 # bug fix: https://github.com/plotly/plotly.py/issues/3469
+# plotly >= 6 removed pio.kaleido.scope; mathjax is disabled via pio.defaults there instead.
 import plotly.io as pio
-pio.kaleido.scope.mathjax = None
+if hasattr(pio.kaleido, "scope"):
+    pio.kaleido.scope.mathjax = None
+else:
+    pio.defaults.mathjax = None
 
 # catch useless warning logs, e.g.:
 # WARNING:pylatexenc.latexencode._unicode_to_latex_encoder:No known latex representation for character
@@ -1791,48 +1795,27 @@ class OpenAccessWorks(Biso):
 
         fig = go.Figure()
 
-        # invisible left bars
+        # The topmost segment of the stack gets its label placed "outside" (above the bar), matching the
+        # convention used by other charts in the report. This also sidesteps a kaleido/plotly.js rendering
+        # bug where "inside" text silently disappears on the segment that meets the rounded top corner
+        # (see barcornerradius below). Inner segments keep their label inside, in whichever of black/white
+        # is more readable against that segment's own color.
+        last_index = len(oa_values) - 1
         for i, (oa_type, count) in enumerate(oa_values.items()):
-            fig.add_trace(go.Bar(
-                x=years,
-                y=count,
-                marker_color="rgba(0,0,0,0)",
-                offsetgroup=-0.1,
-                width=0.1,
-                showlegend=False,
-                hoverinfo="skip",
-            ))
-
-        # Bars
-        for i, (oa_type, count) in enumerate(oa_values.items()):
+            labels = [str(int(c)) if c > 0 else "" for c in count]
+            is_top_segment = i == last_index
+            color = translated_colors[oa_type]
             fig.add_trace(go.Bar(
                 x=years,
                 y=count,
                 name=oa_type,
-                marker_color=translated_colors[oa_type],
+                marker_color=color,
+                text=labels,
+                textposition="outside" if is_top_segment else "inside",
+                textfont_color="black" if is_top_segment else get_readable_text_color(color),
                 insidetextanchor="middle",
                 textangle=0,
                 cliponaxis=False,
-                offsetgroup=0,
-            ))
-
-        # invisible right bars with text
-        for i, (oa_type, count) in enumerate(oa_values.items()):
-            count_to_plot = [str(int(c)) if c > 0 else "" for c in count]
-            fig.add_trace(go.Bar(
-                x=years,
-                y=count_to_plot,
-                name=oa_type,
-                marker_color="rgba(0,0,0,0)",
-                text=count,
-                textposition="inside",
-                textfont_color="black",
-                insidetextanchor="middle",
-                textangle=0,
-                cliponaxis=False,
-                offsetgroup=1,
-                showlegend=False,
-                hoverinfo="skip",
             ))
 
         # Update layout for better visualization
