@@ -17,7 +17,7 @@ import plotly.graph_objects as go
 import requests
 from elasticsearch import Elasticsearch
 
-from dibisoplot.utils import get_hal_doc_type_name, format_structure_name, get_readable_text_color
+from dibisoplot.utils import get_hal_doc_type_name, format_structure_name, get_readable_text_color, get_bar_width
 from dibisoplot.dibisoplot import DataStatus, Dibisoplot
 
 # bug fix: https://github.com/plotly/plotly.py/issues/3469
@@ -1794,15 +1794,16 @@ class OpenAccessWorks(Biso):
         translated_colors = {self._(k):v for k,v in self.colors.items()}
 
         fig = go.Figure()
+        bar_width = get_bar_width(len(years))
 
-        # The topmost segment of the stack gets its label placed "outside" (above the bar), matching the
-        # convention used by other charts in the report. This also sidesteps a kaleido/plotly.js rendering
-        # bug where "inside" text silently disappears on the segment that meets the rounded top corner
-        # (see barcornerradius below). Inner segments keep their label inside, in whichever of black/white
-        # is more readable against that segment's own color.
+        # Bar traces only draw the stack; labels are added as separate Scatter text traces (below) rather
+        # than via Bar's built-in text=/textposition="inside". Kaleido's renderer auto-shrinks "inside" bar
+        # text to fit each segment's own height regardless of any explicit textfont size or constraintext
+        # setting, which made numbers vary in size across segments. Scatter text has no such auto-fit
+        # behavior, so every label renders at the same fixed size.
         last_index = len(oa_values) - 1
+        cumulative_bottom = np.zeros(len(years))
         for i, (oa_type, count) in enumerate(oa_values.items()):
-            labels = [str(int(c)) if c > 0 else "" for c in count]
             is_top_segment = i == last_index
             color = translated_colors[oa_type]
             fig.add_trace(go.Bar(
@@ -1810,13 +1811,35 @@ class OpenAccessWorks(Biso):
                 y=count,
                 name=oa_type,
                 marker_color=color,
-                text=labels,
-                textposition="outside" if is_top_segment else "inside",
-                textfont_color="black" if is_top_segment else get_readable_text_color(color),
-                insidetextanchor="middle",
-                textangle=0,
                 cliponaxis=False,
+                width=bar_width,
             ))
+
+            labels = [str(int(c)) if c > 0 else "" for c in count]
+            if is_top_segment:
+                # Matches the "outside" (above the bar) label convention used by other charts.
+                fig.add_trace(go.Scatter(
+                    x=years,
+                    y=cumulative_bottom + count,
+                    mode="text",
+                    text=labels,
+                    textposition="top center",
+                    textfont_color="black",
+                    showlegend=False,
+                    hoverinfo="skip",
+                ))
+            else:
+                fig.add_trace(go.Scatter(
+                    x=years,
+                    y=cumulative_bottom + count / 2,
+                    mode="text",
+                    text=labels,
+                    textposition="middle center",
+                    textfont_color=get_readable_text_color(color),
+                    showlegend=False,
+                    hoverinfo="skip",
+                ))
+            cumulative_bottom = cumulative_bottom + count
 
         # Update layout for better visualization
         fig.update_layout(
@@ -1825,10 +1848,6 @@ class OpenAccessWorks(Biso):
             width=self.width,
             height=self.height,
             template="simple_white",
-            uniformtext_minsize=8,
-            uniformtext_mode='show',
-            bargap=0.0,
-            bargroupgap=0.0,
             legend=self.legend_pos,
             margin=self.margin,
         )

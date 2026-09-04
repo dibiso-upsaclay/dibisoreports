@@ -1,6 +1,9 @@
+import base64
+import re
 from enum import Enum
 
 import pandas as pd
+import requests
 from datetime import datetime
 import plotly.graph_objects as go
 import plotly.express as px
@@ -9,6 +12,60 @@ from dibisoplot.translation import get_translator
 import html as html_lib
 
 from dibisoplot.utils import get_empty_plot_with_message, get_bar_width
+
+
+def _get_bordered_flag_data_uri(country_code, width_px, height_px, border_px):
+    """Fetch a country flag SVG and return it, with a thin border composited in, as a base64
+    data URI -- or None if the flag couldn't be fetched.
+
+    The flag markup is spliced directly into a wrapper SVG (rather than referenced via a nested
+    <image href="https://..."> pointing back at flagcdn) because renderers that treat an SVG used
+    as an image source as an untrusted/sandboxed document (this pipeline's Chrome/kaleido step
+    included) refuse to resolve further external references from within it, leaving a blank
+    (opaque white) box where the flag should be.
+    """
+    try:
+        response = requests.get(f"https://flagcdn.com/{country_code}.svg", timeout=5)
+        response.raise_for_status()
+        flag_markup = response.text
+    except Exception:
+        return None
+
+    root_match = re.search(r'<svg\b[^>]*>', flag_markup)
+    if not root_match:
+        return None
+    root_tag = root_match.group(0)
+
+    # Flags with a rectangular flat design (e.g. France) carry only width/height and no viewBox,
+    # meaning their own coordinate system IS their pixel size. Without a viewBox, overwriting
+    # width/height with "100%" only resizes the *clipping viewport* -- the (unscaled) content
+    # would then just get cropped to a peephole instead of scaling down. So a viewBox derived
+    # from the original width/height must be added first when the flag doesn't already have one.
+    if 'viewBox' not in root_tag:
+        size_match = re.search(r'width="([\d.]+)"[^>]*height="([\d.]+)"', root_tag)
+        if size_match:
+            orig_w, orig_h = size_match.group(1), size_match.group(2)
+            new_root_tag = root_tag[:-1] + f' viewBox="0 0 {orig_w} {orig_h}">'
+            flag_markup = flag_markup.replace(root_tag, new_root_tag, 1)
+            root_tag = new_root_tag
+
+    def _fill_wrapper(match):
+        tag = match.group(0)
+        tag = re.sub(r'\s(?:width|height)="[^"]*"', '', tag)
+        return tag[:-1] + ' width="100%" height="100%" preserveAspectRatio="none">'
+
+    flag_markup = re.sub(r'<svg\b[^>]*>', _fill_wrapper, flag_markup, count=1)
+
+    wrapper_svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width_px}" height="{height_px}" '
+        f'viewBox="0 0 {width_px} {height_px}">'
+        f'{flag_markup}'
+        f'<rect x="{border_px / 2}" y="{border_px / 2}" '
+        f'width="{width_px - border_px}" height="{height_px - border_px}" '
+        f'fill="none" stroke="black" stroke-width="{border_px}"/>'
+        f'</svg>'
+    )
+    return "data:image/svg+xml;base64," + base64.b64encode(wrapper_svg.encode("utf-8")).decode("ascii")
 
 
 class DataStatus(Enum):
@@ -540,9 +597,20 @@ class Dibisoplot:
         if self.title is not None:
             fig.update_layout(title=self.title)
 
-        import re
         if hasattr(self, "__class__") and self.__class__.__name__ in ["Conferences", "CollaborationNames"]:
+            # Flags are drawn in the strip between the axis and the tick labels. ticklen (a fixed pixel
+            # value) reserves that strip's width so tick labels start right after it instead of running
+            # under the flag. ticklen is capped at the flag's outer edge (axis_gap_px + flag_width_px):
+            # going further would make the (nominally transparent) tick mark extend past the flag, which
+            # some renderers show as an opaque bar crossing through it.
+            axis_gap_px = 16
+            flag_width_px = 18
+            flag_height_px = round(flag_width_px * 2 / 3)
+            flag_border_px = 1
+            ticklen = axis_gap_px + flag_width_px
+
             struct_names = []
+            flag_codes = []  # (index, country_code)
             pattern = r"__([A-Z]{2})__$"
             for index, struct_full_name in enumerate(list(self.data.keys())):
                 match=re.search(pattern, struct_full_name.strip())
@@ -550,21 +618,46 @@ class Dibisoplot:
                     country_code = match.group(1).lower()
                     struct_name = struct_full_name.replace(f"__{match.group(1)}__","").strip()
                     struct_names.append(struct_name) # Adding spaces to avoid the text overlapping with the flag +"       "
+                    flag_codes.append((index, country_code))
+                else:
+                    struct_names.append(struct_full_name)
+            fig.update_yaxes(tickvals=list(range(len(struct_names))), ticktext=struct_names, ticklen=ticklen, tickcolor="rgba(0,0,0,0)", tickmode="array")
+
+            if flag_codes:
+                # A layout image's x/sizex ("paper" ref) are fractions of the actual plot rectangle, not
+                # of the figure's nominal width -- and that rectangle shrinks a lot when the yaxis
+                # automargin makes room for long tick labels. A fixed fraction would then place flags
+                # inconsistently (too close/overlapping the axis for long labels, too far for short ones).
+                # So render once to measure the real plot width in pixels, then convert our pixel targets
+                # (axis_gap_px, flag_width_px) to fractions of that measured width.
+                plot_width = self.width * 0.5
+                try:
+                    probe_svg = fig.to_image(format="svg").decode("utf-8")
+                    match = re.search(r'class="plotclip"><rect width="([\d.]+)"', probe_svg)
+                    if match:
+                        plot_width = float(match.group(1))
+                except Exception:
+                    pass
+                axis_gap_frac = axis_gap_px / plot_width
+                flag_sizex_frac = flag_width_px / plot_width
+                flag_source_cache = {}
+                for index, country_code in flag_codes:
+                    if country_code not in flag_source_cache:
+                        flag_source_cache[country_code] = _get_bordered_flag_data_uri(
+                            country_code, flag_width_px, flag_height_px, flag_border_px
+                        ) or f"https://flagcdn.com/{country_code}.svg"
                     fig.add_layout_image(
                         dict(
-                            source=f"https://flagcdn.com/{country_code}.svg",
+                            source=flag_source_cache[country_code],
                             xref="paper",
                             yref="y",
-                            x=-0.05,
+                            x=-axis_gap_frac,
                             y=index,
-                            sizex=0.07,
+                            sizex=flag_sizex_frac,
                             sizey=0.7,
                             xanchor="right",
                             yanchor="middle",
                             layer="above"
                         )
                     )
-                else:
-                    struct_names.append(struct_full_name)
-            fig.update_yaxes(tickvals=list(range(len(struct_names))), ticktext=struct_names, ticklen=30, tickcolor="rgba(0,0,0,0)", tickmode="array")
         return fig
