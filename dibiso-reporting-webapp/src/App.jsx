@@ -355,6 +355,9 @@ const ReportGeneratorInterface = () => {
     reporterEmail: '',
     templateVariant: 'classic'
   });
+  // HAL collection code autocomplete
+  const [collectionSuggestions, setCollectionSuggestions] = useState([]);
+  const [showCollectionSuggestions, setShowCollectionSuggestions] = useState(false);
   // Form state for login and registration
   const [loginData, setLoginData] = useState({
     username: '',
@@ -502,6 +505,49 @@ const ReportGeneratorInterface = () => {
       ...prev,
       [name]: value
     }));
+    if (name === 'entityId') {
+      setShowCollectionSuggestions(true);
+    }
+  };
+
+  // Propose HAL collections matching the typed code (at least 3 characters)
+  useEffect(() => {
+    const query = formData.entityId.trim();
+    if (!token || !showCollectionSuggestions || query.length < 3) {
+      setCollectionSuggestions([]);
+      return;
+    }
+    const controller = new AbortController();
+    const timeoutId = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/hal-collections?q=${encodeURIComponent(query)}`,
+          { headers: { 'Authorization': `Bearer ${token}` }, signal: controller.signal }
+        );
+        if (response.ok) {
+          setCollectionSuggestions(await response.json());
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Error fetching HAL collections:', err);
+        }
+      }
+    }, 250);
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [formData.entityId, showCollectionSuggestions, token]);
+
+  // Choosing a collection fills the collection code and pre-fills the lab name with the HAL set name
+  const handleSelectCollection = (collection) => {
+    setFormData(prev => ({
+      ...prev,
+      entityId: collection.code,
+      entityFullName: collection.name.replace(/\s+/g, ' ').trim()
+    }));
+    setCollectionSuggestions([]);
+    setShowCollectionSuggestions(false);
   };
 
   const handleLoginInputChange = (e) => {
@@ -1896,15 +1942,37 @@ const ReportGeneratorInterface = () => {
                       {tr.halDescription}
                     </span>
                   </label>
-                  <input
-                    type="text"
-                    id="entityId"
-                    name="entityId"
-                    value={formData.entityId}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                    placeholder={tr.halPlaceholder}
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      id="entityId"
+                      name="entityId"
+                      value={formData.entityId}
+                      onChange={handleInputChange}
+                      onBlur={() => setShowCollectionSuggestions(false)}
+                      autoComplete="off"
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      placeholder={tr.halPlaceholder}
+                    />
+                    {showCollectionSuggestions && collectionSuggestions.length > 0 && (
+                      <ul className="absolute z-10 mt-1 w-full max-h-60 overflow-y-auto bg-gray-700 border border-gray-600 rounded-md shadow-lg">
+                        {collectionSuggestions.map((collection) => (
+                          <li
+                            key={collection.code}
+                            // mouseDown (not click) so the selection happens before the input's blur closes the list
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              handleSelectCollection(collection);
+                            }}
+                            className="px-3 py-2 cursor-pointer hover:bg-gray-600 text-sm"
+                          >
+                            <span className="text-white font-medium">{collection.code}</span>
+                            <span className="text-gray-400"> — {collection.name}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </div>
                 {/* ROR ID Input */}
                 <div>

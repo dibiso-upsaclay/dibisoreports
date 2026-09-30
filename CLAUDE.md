@@ -118,6 +118,7 @@ succeed. `failed` covers data/HTML errors.
   - `POST /export/{comp_id}` — re-render HTML with analyses + produce PDF+ZIP (backs the "Export ZIP" button)
   - `GET /download-pdf?temp_id={comp_id}&file_name=report|biblio` — re-render with analyses + produce just that PDF, then download it (backs the "Report PDF" / "Bibliography PDF" buttons)
   - `GET /download-zip`, `GET /download-html` — download already-produced outputs
+  - `GET /hal-collections?q=` — autocomplete HAL collection codes (min. 3 chars); backed by a local copy of the HAL OAI `ListSets` "collection:" sets (`app/hal_collections.py`, stored in `USERS_DATABASE_DIRECTORY`, fetched at startup if missing/stale and refreshed nightly)
   - `GET /template-assets/{file_path}` — serve CSS/image assets from the HTML template (public, restricted to `css/` and `assets/`)
 
 **React frontend** (`dibiso-reporting-webapp/src/App.jsx`)

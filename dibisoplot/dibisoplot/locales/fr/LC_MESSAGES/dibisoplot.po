@@ -238,3 +238,27 @@ msgstr "Distribution des datasets par entrepôt"
 #: biso/biso.py:2061
 msgid "Distribution of datasets by license"
 msgstr "Distribution des datasets par licence"
+
+#: biso/biso.py
+msgid "Publication title"
+msgstr "Titre de la publication"
+
+#: biso/biso.py
+msgid "Dataset title"
+msgstr "Titre du jeu de données"
+
+#: biso/biso.py
+msgid "Dataset authors"
+msgstr "Auteurs du jeu de données"
+
+#: biso/biso.py
+msgid "Dataset DOI"
+msgstr "DOI du jeu de données"
+
+#: biso/biso.py
+msgid "List of HAL publications linked to datasets"
+msgstr "Liste des publications HAL liées à des jeux de données"
+
+#: biso/biso.py
+msgid "Out of the {nb_publications} publications found in the collection for the year {year}, {nb_with_dataset} are linked to at least one dataset."
+msgstr "Sur les {nb_publications} publications trouvées dans la collection pour l'année {year}, {nb_with_dataset} sont liées à au moins un jeu de données."

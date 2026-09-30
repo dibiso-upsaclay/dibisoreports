@@ -208,3 +208,27 @@ msgstr ""
 #: biso/biso.py:2300
 msgid "Error while making the bibliography"
 msgstr ""
+
+#: biso/biso.py
+msgid "Publication title"
+msgstr ""
+
+#: biso/biso.py
+msgid "Dataset title"
+msgstr ""
+
+#: biso/biso.py
+msgid "Dataset authors"
+msgstr ""
+
+#: biso/biso.py
+msgid "Dataset DOI"
+msgstr ""
+
+#: biso/biso.py
+msgid "List of HAL publications linked to datasets"
+msgstr ""
+
+#: biso/biso.py
+msgid "Out of the {nb_publications} publications found in the collection for the year {year}, {nb_with_dataset} are linked to at least one dataset."
+msgstr ""

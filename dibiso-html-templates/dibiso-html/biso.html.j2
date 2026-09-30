@@ -252,6 +252,18 @@
 {% endif %}
 
 
+{# ── 15b. Jeux de données associés aux publications HAL ───────── #}
+{% if figures.related_datasets is defined and 'related_datasets' not in removed_sections %}
+<section id="related-datasets" data-section="related_datasets">
+  <h2>Jeux de données associés aux publications HAL</h2>
+  {% if relateddatasetsphrase is defined and relateddatasetsphrase %}<p><strong>{{ relateddatasetsphrase }}</strong></p>{% endif %}
+  {{ figures.related_datasets | safe }}
+  {% if analyses.related_datasets is defined and analyses.related_datasets %}
+  <div class="analysis">{{ analyses.related_datasets | safe }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
 {# ── 16. Atouts du laboratoire ───────────────────────────────── #}
 {% if 'strengths' not in removed_sections %}
 <section id="strengths" data-section="strengths">

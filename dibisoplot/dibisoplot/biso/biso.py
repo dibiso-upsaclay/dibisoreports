@@ -5,6 +5,8 @@ import warnings
 from collections import defaultdict
 import traceback
 import re
+import html as html_lib
+from concurrent.futures import ThreadPoolExecutor
 
 from collections import Counter
 from datetime import datetime
@@ -2333,3 +2335,170 @@ class Data(Biso):
         fig.update_yaxes(categoryorder="array", categoryarray=["others", "CC0", "CC-BY"], row=2, col=1)
 
         return fig
+
+
+class RelatedDatasets(Biso):
+    """
+    A class to fetch and generate a table of the HAL publications of the collection that reference at least one
+    dataset (HAL field ``relatedData_s``). Title and authors of each dataset are retrieved from DataCite.
+    """
+
+    figure_file_extension = "tex"
+    html_figure_type = "html_table"
+
+    max_authors_displayed = 5
+    hal_max_rows = 1000
+    datacite_max_workers = 8
+    doi_regex = re.compile(r"10\.\d{4,9}/[^\s\"<>]+", re.IGNORECASE)
+
+    def __init__(self, entity_id: str, year: int | None = None, **kwargs):
+        """
+        Initialize the RelatedDatasets class.
+        """
+        super().__init__(entity_id, year, **kwargs)
+        self.nb_publications = 0
+        self.nb_publications_with_dataset = 0
+
+    @classmethod
+    def extract_doi(cls, related_data: str) -> str | None:
+        """Extract a bare DOI from a HAL relatedData_s value (URL, ``doi:`` prefix, or bare DOI)."""
+        match = cls.doi_regex.search(related_data)
+        if not match:
+            return None
+        return match.group(0).rstrip(".,;)")
+
+    def _fetch_datacite(self, doi: str) -> dict[str, str]:
+        """Return the dataset title and authors from DataCite ({} if the DOI is unknown to DataCite)."""
+        try:
+            response = requests.get(f"https://api.datacite.org/dois/{doi}", timeout=30)
+            if response.status_code != 200:
+                return {}
+            attributes = response.json().get("data", {}).get("attributes", {})
+        except Exception as e:
+            logging.warning(f"DataCite request failed for {doi}: {e}")
+            return {}
+
+        titles = attributes.get("titles") or []
+        title = titles[0].get("title", "") if titles else ""
+        creators = [c.get("name") or "" for c in (attributes.get("creators") or [])]
+        creators = [c for c in creators if c]
+        if len(creators) > self.max_authors_displayed:
+            authors = f"{creators[0]} et al."
+        else:
+            authors = "; ".join(creators)
+        return {"title": title, "authors": authors}
+
+    def fetch_data(self) -> dict[str, Any]:
+        """
+        Fetch the publications of the collection linked to at least one dataset from HAL, then the dataset metadata
+        from DataCite. ``self.data`` is a list of dicts: ``{"title": str, "datasets": [{"doi", "raw", "title",
+        "authors"}]}``.
+        """
+        try:
+            base_url = (
+                f"https://api.archives-ouvertes.fr/search/{self.entity_id}/?q=*:*"
+                f"&fq=publicationDateY_i:{self.year}"
+            )
+            total = requests.get(f"{base_url}&rows=0&wt=json", timeout=60).json()
+            self.nb_publications = total.get("response", {}).get("numFound", 0)
+
+            res = requests.get(
+                f"{base_url}&fq=relatedData_s:*&rows={self.hal_max_rows}"
+                "&fl=authFullName_s,title_s,relatedData_s&wt=json",
+                timeout=60
+            ).json()
+            docs = res.get("response", {}).get("docs", [])
+            self.nb_publications_with_dataset = res.get("response", {}).get("numFound", len(docs))
+
+            self.info = ""
+            if not docs:
+                self.data_status = DataStatus.NO_DATA
+                return self._stats()
+
+            dois = {
+                doi
+                for doc in docs for value in doc.get("relatedData_s", [])
+                if (doi := self.extract_doi(value))
+            }
+            with ThreadPoolExecutor(max_workers=self.datacite_max_workers) as executor:
+                datacite = dict(zip(dois, executor.map(self._fetch_datacite, dois)))
+
+            publications = []
+            for doc in docs:
+                datasets = []
+                seen = set()
+                for value in doc.get("relatedData_s", []):
+                    doi = self.extract_doi(value)
+                    key = (doi or value).lower()
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    meta = datacite.get(doi, {}) if doi else {}
+                    datasets.append({
+                        "doi": doi,
+                        "raw": value,
+                        "title": meta.get("title", ""),
+                        "authors": meta.get("authors", ""),
+                    })
+                publications.append({"title": " ; ".join(doc.get("title_s", [])), "datasets": datasets})
+
+            self.data = publications
+            self.data_status = DataStatus.OK
+            return self._stats()
+        except Exception as e:
+            return self._handle_fetch_error(e, "Error fetching or formatting related datasets data")
+
+    def _stats(self) -> dict[str, Any]:
+        phrase = self._(
+            "Out of the {nb_publications} publications found in the collection for the year {year}, "
+            "{nb_with_dataset} are linked to at least one dataset."
+        ).format(
+            nb_publications=self.nb_publications,
+            year=self.year,
+            nb_with_dataset=self.nb_publications_with_dataset,
+        )
+        return {"related_datasets_phrase": phrase, "info": self.info}
+
+    def get_figure(self) -> str:
+        """
+        Generate an HTML table of publications and their datasets. A publication linked to several datasets spans
+        several rows (the publication title cell uses rowspan).
+        """
+        if self.data_status == DataStatus.NOT_FETCHED:
+            self.fetch_data()
+        if self.data_status == DataStatus.NO_DATA:
+            return self.get_no_data_html()
+        if self.data_status == DataStatus.ERROR:
+            return self.get_error_html()
+
+        esc = html_lib.escape
+        headers = "".join(
+            f"<th>{esc(h)}</th>" for h in (
+                self._("Publication title"),
+                self._("Dataset title"),
+                self._("Dataset authors"),
+                self._("Dataset DOI"),
+            )
+        )
+        rows = []
+        for pub in self.data:
+            datasets = pub["datasets"]
+            for i, dataset in enumerate(datasets):
+                cells = ""
+                if i == 0:
+                    cells += f'<td rowspan="{len(datasets)}">{esc(pub["title"])}</td>'
+                if dataset["doi"]:
+                    doi_cell = f'<a href="https://doi.org/{esc(dataset["doi"])}">{esc(dataset["doi"])}</a>'
+                elif dataset["raw"].startswith("http"):
+                    doi_cell = f'<a href="{esc(dataset["raw"])}">{esc(dataset["raw"])}</a>'
+                else:
+                    doi_cell = esc(dataset["raw"])
+                cells += f"<td>{esc(dataset['title'])}</td><td>{esc(dataset['authors'])}</td><td>{doi_cell}</td>"
+                rows.append(f"<tr>{cells}</tr>")
+
+        return (
+            '<figure class="dibiso-table" id="related_datasets">'
+            f"<figcaption>{esc(self._('List of HAL publications linked to datasets'))}</figcaption>"
+            f"<table><thead><tr>{headers}</tr></thead><tbody>{''.join(rows)}</tbody></table>"
+            "</figure>"
+        )

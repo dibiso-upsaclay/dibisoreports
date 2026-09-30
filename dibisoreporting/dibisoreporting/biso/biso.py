@@ -18,6 +18,7 @@ from dibisoplot.biso import PrivateSectorCollaborations
 from dibisoplot.biso import WorksBibtex
 from dibisoplot.biso import WorksType
 from dibisoplot.biso import Data
+from dibisoplot.biso import RelatedDatasets
 
 from dibisoreporting import DibisoReporting
 
@@ -50,7 +51,8 @@ class Biso(DibisoReporting):
         "PrivateSectorCollaborations": PrivateSectorCollaborations,
         "WorksBibtex": WorksBibtex,
         "WorksType": WorksType,
-        "Data": Data
+        "Data": Data,
+        "RelatedDatasets": RelatedDatasets
     }
 
     default_plot_main_color = "#004e7d"
@@ -135,6 +137,13 @@ class Biso(DibisoReporting):
                 "ror_id": None,
                 "stats_to_save": {
                     "bso_datasets_phrase": "bsodatasetsphrase"
+                }
+            }
+        ],
+        "RelatedDatasets": [
+            {
+                "stats_to_save": {
+                    "related_datasets_phrase": "relateddatasetsphrase"
                 }
             }
         ]

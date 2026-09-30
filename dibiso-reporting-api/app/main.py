@@ -92,6 +92,7 @@ from .users import (
     delete_section_state,
     delete_old_section_state,
 )
+from .hal_collections import search_collections, collections_refresh_loop
 
 
 # Configure logging
@@ -145,6 +146,7 @@ REPORT_SECTIONS: Dict[str, list] = {
         {"id": "european_projects",             "label": "Projets européens"},
         {"id": "anr_projects",                  "label": "Projets ANR"},
         {"id": "data",           "label": "Jeux de données partagés"},
+        {"id": "related_datasets", "label": "Jeux de données associés aux publications HAL"},
         {"id": "strengths",      "label": "Atouts du laboratoire",  "figure": False},
         {"id": "recommendations","label": "Préconisations",         "figure": False},
     ],
@@ -262,6 +264,7 @@ async def lifespan(_app: FastAPI):
     # Start background tasks
     cleanup_task = asyncio.create_task(cleanup_old_compilations())
     monitor_task = asyncio.create_task(monitor_thread_pool())
+    collections_task = asyncio.create_task(collections_refresh_loop())
 
     yield
 
@@ -270,6 +273,7 @@ async def lifespan(_app: FastAPI):
     # Cancel background tasks
     cleanup_task.cancel()
     monitor_task.cancel()
+    collections_task.cancel()
 
     # Shutdown thread pool
     thread_pool.shutdown(wait=True)
@@ -1973,6 +1977,15 @@ async def serve_template_asset(file_path: str):
         raise HTTPException(status_code=404, detail="Asset not found")
 
     return FileResponse(str(target))
+
+
+@app.get("/hal-collections")
+async def hal_collections_autocomplete(
+    q: str,
+    current_user: Annotated[dict, Depends(get_current_active_user)]
+):
+    """Autocomplete HAL collection codes: [{"code", "name"}] matching q (at least 3 characters)."""
+    return search_collections(q)
 
 
 # Health check endpoint (public)
