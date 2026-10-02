@@ -28,7 +28,6 @@ dependencies = [
     "kaleido < 1",
     "tqdm >= 4.65.0",
     "requests",
-    "emoji-country-flag",
     "openalex-analysis >= 0.15",
     "elasticsearch>7,<9",
     "pyalex"

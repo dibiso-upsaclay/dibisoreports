@@ -1,5 +1,3 @@
 dibisoplot>=0.9
 requests
-pdfCropMargins
-pypdf
 kaleido==0.2.1

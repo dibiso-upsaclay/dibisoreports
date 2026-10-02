@@ -24,9 +24,6 @@ dibisoplot
    Dibisoplot.generate_plot_info
    Dibisoplot.get_no_data_plot
    Dibisoplot.get_error_plot
-   Dibisoplot.get_no_data_latex
-   Dibisoplot.get_error_latex
-   Dibisoplot.dataframe_to_longtable
    Dibisoplot.get_figure
 
 
@@ -112,6 +109,5 @@ utils
 
    get_hal_doc_type_name
    get_empty_plot_with_message
-   get_empty_latex_with_message
    get_bar_width
    format_structure_name

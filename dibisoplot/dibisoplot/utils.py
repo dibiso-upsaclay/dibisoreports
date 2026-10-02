@@ -3,7 +3,6 @@ import pkgutil
 import tomllib
 import warnings
 
-import flag
 import plotly.graph_objects as go
 
 hal_doc_types_names_mapping = tomllib.load(BytesIO(pkgutil.get_data(__name__, "HAL_doc_types_names.toml")))
@@ -26,19 +25,6 @@ def get_empty_plot_with_message(message: str) -> go.Figure:
     fig.update_xaxes(visible=False)
     fig.update_yaxes(visible=False)
     return fig
-
-
-def get_empty_latex_with_message(message: str) -> str:
-    """Create an empty plot with a message."""
-    latex_str = """
-\\setlength{\\fboxsep}{10pt}
-\\fbox{
-    \\parbox{\\textwidth}{
-        \\centering """+message+"""
-    }
-}
-"""
-    return latex_str
 
 
 # Calculate plot bar width depending on the number of bars on the plot, based on a linear interpolation of two examples
@@ -100,13 +86,4 @@ def format_structure_name(struct_name: str, country_code: str) -> str:
     # add country flag
     if country_code is None:
         return struct_name + " (Unspecified country)"
-    # country_flag=get_flag_img(country_code)
-    # return f"{country_flag}{struct_name}"
     return f"{struct_name} __{country_code.upper()}__"
-
-# def get_flag_img(country_code: str) -> str:
-#     if not country_code:
-#         return ""
-#     code = country_code.lower().strip()
-#     # Import flag in svg format by Flagcdn
-#     return f'<img src="https://flagcdn.com/{code}.svg"/>'

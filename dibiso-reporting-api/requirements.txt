@@ -10,8 +10,8 @@ starlette
 requests
 markdown>=3.5
 weasyprint>=62
-pypdf
-pdfCropMargins
+# PyMuPDF: PDF background overlay (apply_background_to_pdf)
+PyMuPDF
 # kaleido 0.2.1 ships its own Electron — works headlessly in Docker without Chrome.
 # On Windows dev, override with: pip install "kaleido>=1.0.0"  (0.2.1 hangs on Windows)
 kaleido==0.2.1

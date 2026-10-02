@@ -1,5 +1,4 @@
 from typing import Any
-import logging
 import traceback
 
 from openalex_analysis.data import WorksData
@@ -15,10 +14,6 @@ import plotly.io as pio
 pio.kaleido.scope.mathjax = None
 
 openalex_analysis_config.n_max_entities = 1e6
-
-# catch useless warning logs, e.g.:
-# WARNING:pylatexenc.latexencode._unicode_to_latex_encoder:No known latex representation for character
-logging.getLogger('pylatexenc').setLevel(logging.ERROR)
 
 
 class PubPart(Dibisoplot):

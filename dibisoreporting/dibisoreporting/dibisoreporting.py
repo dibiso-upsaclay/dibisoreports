@@ -241,10 +241,6 @@ class DibisoReporting:
         except Exception:
             pass  # biblio template optional
 
-    def _get_html_template_pairs(self) -> list[tuple[str, str]]:
-        """Return [(template_name, output_filename)] pairs. Overridden by subclasses."""
-        return [("biso.html.j2", "report.html")]
-
     # ── Main report generation ──────────────────────────────────────────
 
     def generate_report(

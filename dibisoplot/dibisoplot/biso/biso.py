@@ -30,10 +30,6 @@ if hasattr(pio.kaleido, "scope"):
 else:
     pio.defaults.mathjax = None
 
-# catch useless warning logs, e.g.:
-# WARNING:pylatexenc.latexencode._unicode_to_latex_encoder:No known latex representation for character
-logging.getLogger('pylatexenc').setLevel(logging.ERROR)
-
 
 class Biso(Dibisoplot):
     """
@@ -1181,8 +1177,6 @@ class Conferences(Biso):
             # add country flag
             if country_code is None:
                 return conf_name + " (" + self._("Unspecified country") + ")"
-            # country_flag=get_flag_img(country_code)
-            # return f"{country_flag}{conf_name}"
             return f"{conf_name} __{country_code.upper()}__"
         
         try:
@@ -1967,12 +1961,6 @@ class WorksBibtex(Biso):
         :return: The info about the fetched data.
         :rtype: dict[str, Any]
         """
-        def rep_cyr(text):
-            """
-            Replace cyrillic characters with question marks. Avoids errors in LaTeX when compiling.
-            """
-            return re.sub(r'[\u0400-\u04FF]', '?', text)
-
         try:
             url = (f"https://api.archives-ouvertes.fr/search/{self.entity_id}/?q=publicationDateY_i:{self.year}&"
                    f"wt=json&rows=0")

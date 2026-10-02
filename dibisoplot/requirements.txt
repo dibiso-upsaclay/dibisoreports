@@ -4,8 +4,6 @@ plotly >= 5.15.0, < 6  # plotly 6+ dropped the kaleido v0 API used here; pair wi
 kaleido < 1
 tqdm >= 4.65.0
 requests
-emoji-country-flag
 openalex-analysis >= 0.15
 elasticsearch>7,<9
-pylatexenc
 pyalex
