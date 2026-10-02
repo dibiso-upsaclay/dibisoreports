@@ -83,7 +83,6 @@ class Dibisoplot:
     This class is not designed to be called directly but rather to provide general methods to the different plot types.
 
     :cvar orientation: Orientation for plots ('v' for vertical, 'h' for horizontal).
-    :cvar figure_file_extension: File extension of the figure (pdf, tex...).
     :cvar default_dynamic_bar_width: Default width for bars in plots when the height is set dynamically.
     :cvar default_height: Default height for plots.
     :cvar default_legend_pos: Default position for the legend.
@@ -92,7 +91,6 @@ class Dibisoplot:
 
     # TODO: change default orientation value to 'h'
     orientation = 'v'
-    figure_file_extension = "pdf"
     html_figure_type = "plotly"  # "plotly" | "html_table" | "html_list"
 
     default_dynamic_bar_width = 0.7

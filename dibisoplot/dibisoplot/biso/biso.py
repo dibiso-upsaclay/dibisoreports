@@ -516,7 +516,6 @@ class Books(Biso):
     A class to fetch and generate a table of books (ouvrages).
     """
 
-    figure_file_extension = "tex"
     html_figure_type = "html_table"
 
     def __init__(self, entity_id: str, year: int | None = None, **kwargs):
@@ -596,7 +595,6 @@ class Chapters(Biso):
     A class to fetch and generate a table of book chapters.
     """
 
-    figure_file_extension = "tex"
     html_figure_type = "html_table"
 
 
@@ -1319,7 +1317,6 @@ class Journals(Biso):
             f"<br/>"
         )
 
-    figure_file_extension = "tex"
     html_figure_type = "html_table"
 
     def __init__(self, entity_id: str, year: int | None = None, **kwargs):
@@ -1958,7 +1955,6 @@ class WorksBibtex(Biso):
     A class to fetch the works of a HAL collection and render them as an HTML bibliography list.
     """
 
-    figure_file_extension = "bib"
     html_figure_type = "html_list"
 
     def fetch_data(self) -> dict[str, Any]:
@@ -2124,7 +2120,6 @@ class Data(Biso):
     """
     A class to fetch data about shared datasets from the BSO index and the DataCite API
     """
-    figure_file_extension = "pdf"
     html_figure_type = "plotly"
 
     def __init__(self, entity_id: str, year: int | None = None, ror_id: str | None = None,**kwargs):
@@ -2343,7 +2338,6 @@ class RelatedDatasets(Biso):
     dataset (HAL field ``relatedData_s``). Title and authors of each dataset are retrieved from DataCite.
     """
 
-    figure_file_extension = "tex"
     html_figure_type = "html_table"
 
     max_authors_displayed = 5
