@@ -655,15 +655,15 @@ def apply_background_to_pdf(pdf_path: Path, background_pdf_path: Path) -> None:
     preserved intact and TOC links remain functional.
     """
     try:
-        import fitz
+        import pymupdf
     except ImportError:
         logger.warning("PyMuPDF not available; skipping background overlay")
         return
     if not background_pdf_path.exists():
         return
     try:
-        main_doc = fitz.open(str(pdf_path))
-        bg_doc = fitz.open(str(background_pdf_path))
+        main_doc = pymupdf.open(str(pdf_path))
+        bg_doc = pymupdf.open(str(background_pdf_path))
         n = main_doc.page_count
         num_bg = bg_doc.page_count
         if n <= 2 or num_bg == 0:
