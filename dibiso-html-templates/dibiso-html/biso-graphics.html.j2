@@ -1,0 +1,98 @@
+{#- Rendering of each BiSO graphic, with its own explanatory text, wherever the report layout places it.
+    Imported "with context" by biso.html.j2. -#}
+
+{#- Graphics shown with a "bêta" badge in their section title -#}
+{% set beta_graphics = ['journals', 'private_sector_collaborations'] %}
+
+{% macro graphic(key) -%}
+{% if key == 'works_type' %}
+  {{ figures.works_type | safe }}
+  {% if workstype_info is defined and workstype_info %}<p class="dibiso-info">{{ workstype_info }}</p>{% endif %}
+
+{% elif key == 'journals_hal' %}
+  {{ figures.journals_hal | safe }}
+  {% if journalshalinfo is defined and journalshalinfo %}<p class="dibiso-info">{{ journalshalinfo | safe }}</p>{% endif %}
+
+{% elif key == 'conferences' %}
+  {{ figures.conferences | safe }}
+  {% if conferencesinfo is defined and conferencesinfo %}<p class="dibiso-info">{{ conferencesinfo }}</p>{% endif %}
+
+{% elif key == 'books' %}
+  {{ figures.books | safe }}
+  {% if booksinfo is defined and booksinfo %}<p class="dibiso-info">{{ booksinfo }}</p>{% endif %}
+
+{% elif key == 'chapters' %}
+  {{ figures.chapters | safe }}
+  {% if chaptersinfo is defined and chaptersinfo %}<p class="dibiso-info">{{ chaptersinfo }}</p>{% endif %}
+
+{% elif key == 'open_access_works' %}
+  {{ figures.open_access_works | safe }}
+  {% if openaccessworksinfo is defined and openaccessworksinfo %}<p class="dibiso-info">{{ openaccessworksinfo }}</p>{% endif %}
+  <div class="dibiso-legend">
+    <dl>
+      <dt>TI dans HAL</dt><dd>PDF librement accessible pour tous sur l'archive ouverte HAL</dd>
+      <dt>OA Hors HAL</dt><dd>PDF disponible sur les sites éditeurs, ou sur une archive ouverte autre que HAL, dépôt à l'étranger, disciplinaire tel qu'Arxiv, Pubmed, etc.</dd>
+      <dt>Accès fermé</dt><dd>Notice seule sur HAL. En l'absence d'abonnement à la revue, les lecteurs n'ont pas accès au contenu.</dd>
+    </dl>
+  </div>
+
+{% elif key == 'journals' %}
+  <p>Ce tableau utilise des données du Baromètre français de la Science Ouverte. Ces données sont compilées le dernier trimestre de chaque année (généralement en décembre), sur les données de l'année précédente. Ainsi, le tableau montre le nombre de publications en accès ouvert lors du trimestre {{ reportyear | default('') }}Q4.</p>
+  {% if bsojournalsnbworks is defined and bsojournalsnbworksfoundinbso is defined and bsojournalsnbworks and bsojournalsnbworksfoundinbso %}<p><strong>Il existe généralement un déficit de couverture d'environ 30&nbsp;% par rapport à HAL&nbsp;: sur {{ bsojournalsnbworks }} articles, {{ bsojournalsnbworksfoundinbso }} ont été trouvées dans le BSO.</strong></p>{% endif %}
+  <p>La colonne « APC payés » indique le montant de frais APC détecté comme payé par le BSO. Comme toute donnée collectée à travers de multiples sources hétérogènes, certaines données peuvent être manquantes ou inexactes, mais permettent néanmoins d'avoir un aperçu général de l'ouverture de la production scientifique.</p>
+  {{ figures.journals | safe }}
+  {% if journalsinfo is defined and journalsinfo %}<p class="dibiso-info">{{ journalsinfo }}</p>{% endif %}
+
+{% elif key == 'collaboration_map_world' %}
+  <p>Types de données récupérées : Articles et Communications</p>
+  {{ figures.collaboration_map_world | safe }}
+  {% if collaborationmapworldinfo is defined and collaborationmapworldinfo %}<p class="dibiso-info">{{ collaborationmapworldinfo }}</p>{% endif %}
+
+{% elif key == 'collaboration_map_europe' %}
+  <p>Types de données récupérées : Articles et Communications</p>
+  {{ figures.collaboration_map_europe | safe }}
+  {% if collaborationmapeuropeinfo is defined and collaborationmapeuropeinfo %}<p class="dibiso-info">{{ collaborationmapeuropeinfo }}</p>{% endif %}
+
+{% elif key == 'collaboration_names' %}
+  <p>Types de données récupérées : Articles et Communications</p>
+  {{ figures.collaboration_names | safe }}
+  {% if collaborationnamesinfo is defined and collaborationnamesinfo %}<p class="dibiso-info">{{ collaborationnamesinfo }}</p>{% endif %}
+
+{% elif key == 'private_sector_collaborations' %}
+  <p>Types de données récupérées : Articles et Communications</p>
+  {{ figures.private_sector_collaborations | safe }}
+  {% if privatesectorcollaborationsinfo is defined and privatesectorcollaborationsinfo %}<p class="dibiso-info">{{ privatesectorcollaborationsinfo }}</p>{% endif %}
+
+{% elif key == 'european_projects' %}
+  {{ figures.european_projects | safe }}
+  {% if europeanprojectsinfo is defined and europeanprojectsinfo %}<p class="dibiso-info">{{ europeanprojectsinfo }}</p>{% endif %}
+
+{% elif key == 'anr_projects' %}
+  {{ figures.anr_projects | safe }}
+  {% if anrprojectsinfo is defined and anrprojectsinfo %}<p class="dibiso-info">{{ anrprojectsinfo }}</p>{% endif %}
+
+{% elif key == 'data' %}
+  <p>Un guichet unique est à votre disposition pour vous accompagner sur toutes les questions en lien avec les données de la recherche : <a href="mailto:donnees-recherche@universite-paris-saclay.fr">donnees-recherche@universite-paris-saclay.fr</a></p>
+  {% if bsodatasetsphrase is defined and bsodatasetsphrase %}
+    <p>Le BSO fouille le texte d'environ 40% des articles,
+    pour identifier une mention d'un jeu de données associé à l'article et partagé en ligne.
+    Il s'agit d'une mention dans le texte de l'article : l'existence de ces jeux de données n'est donc pas garantie.
+    Par ailleurs, nos vérifications - en 2026 - suggèrent de nombreuses erreurs d'attribution.
+    Voir aussi : <a href="https://barometredelascienceouverte.esr.gouv.fr/a-propos/methodologie">Baromètre de la science ouverte</a>
+    et aussi <a href="https://hal.science/hal-04121339">HAL</a>
+    </p>
+    <p><strong>{{ bsodatasetsphrase }}</strong></p>
+  {% endif %}
+  {% if figures.data is defined and figures.data %}
+    <p>Les graphiques ci-dessous présentent les jeux de données associés à un identifiant ROR de laboratoire (source : Datacite). Ils ne sont pas associés à un article en particulier.</p>
+    {{ figures.data | safe }}
+  {% endif %}
+
+{% elif key == 'related_datasets' %}
+  {% if relateddatasetsphrase is defined and relateddatasetsphrase %}<p><strong>{{ relateddatasetsphrase }}</strong></p>{% endif %}
+  {{ figures.related_datasets | safe }}
+
+{% elif figures[key] is defined %}
+  {{ figures[key] | safe }}
+{% endif %}
+{%- endmacro %}

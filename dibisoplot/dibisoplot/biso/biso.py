@@ -1950,6 +1950,7 @@ class WorksBibtex(Biso):
     """
 
     html_figure_type = "html_list"
+    max_authors_displayed = 5
 
     def fetch_data(self) -> dict[str, Any]:
         """
@@ -1984,6 +1985,10 @@ class WorksBibtex(Biso):
             for work in works:
                 titles = work.get("title_s", [])
                 authors = [str(author) for author in work.get("authFullName_s", [""])]
+                if len(authors) > self.max_authors_displayed:
+                    authors_str = f"{authors[0]} et al."
+                else:
+                    authors_str = ", ".join(authors)
                 # Extract the type of entry
                 type_match = re.search(type_pattern, str(work.get("label_bibtex", "")))
                 if type_match:
@@ -1992,7 +1997,7 @@ class WorksBibtex(Biso):
                     entry_type = "misc"
                 ref = {
                     "TITLE": str(titles[0] if len(titles) > 0 else ""),
-                    "AUTHOR": " and ".join(authors),
+                    "AUTHOR": authors_str,
                     "URL": str(work.get("uri_s", "")),
                     "JOURNAL": str(work.get("journalTitle_s", "")),
                     "PUBLISHER": str(work.get("journalPublisher_s", "")),

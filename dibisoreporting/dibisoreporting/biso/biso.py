@@ -34,6 +34,10 @@ class Biso(DibisoReporting):
     :cvar default_plot_main_color: Default color for the main plot (#004e7d)
     :cvar default_visualizations: Dictionary contains each type of plot to include in the report with the parameters of
         each plot.
+    :cvar always_generated_figures: Figures generated whatever the sections are (used outside the report sections).
+    :cvar default_sections: Default ordered layout of the report sections. Each section has a unique id, a title and
+        an ordered list of figure keys (see ``DibisoReporting.figure_name``). A section without figures is a free-text
+        section.
     """
 
     # Map class names to actual classes
@@ -150,6 +154,36 @@ class Biso(DibisoReporting):
     }
 
 
+    always_generated_figures = ["works_bibtex"]
+
+    default_sections = [
+        {"id": "works_type", "title": "Typologie de la production scientifique", "graphics": ["works_type"]},
+        {"id": "journals_hal", "title": "Liste des revues", "graphics": ["journals_hal"]},
+        {"id": "conferences", "title": "Liste des conférences", "graphics": ["conferences"]},
+        {"id": "books", "title": "Liste des ouvrages", "graphics": ["books"]},
+        {"id": "chapters", "title": "Liste des chapitres", "graphics": ["chapters"]},
+        {"id": "open_access_works", "title": "Articles et Communications de congrès en accès ouvert",
+         "graphics": ["open_access_works"]},
+        {"id": "journals", "title": "Revues et voies d'accès ouvert (BSO)", "graphics": ["journals"]},
+        {"id": "collaboration_map_world", "title": "Carte des collaborations internationales",
+         "graphics": ["collaboration_map_world"]},
+        {"id": "collaboration_map_europe", "title": "Carte des collaborations européennes",
+         "graphics": ["collaboration_map_europe"]},
+        {"id": "collaboration_names", "title": "Collaborations internationales par établissements",
+         "graphics": ["collaboration_names"]},
+        {"id": "private_sector_collaborations", "title": "Collaborations avec le secteur privé",
+         "graphics": ["private_sector_collaborations"]},
+        {"id": "european_projects", "title": "Projets européens", "graphics": ["european_projects"]},
+        {"id": "anr_projects", "title": "Projets ANR", "graphics": ["anr_projects"]},
+        {"id": "data", "title": "Jeux de données partagés", "graphics": ["data"]},
+        {"id": "related_datasets", "title": "Jeux de données associés aux publications HAL",
+         "graphics": ["related_datasets"]},
+        {"id": "strengths", "title": "Atouts du laboratoire dans son engagement pour la science ouverte",
+         "graphics": []},
+        {"id": "recommendations", "title": "Préconisations, pour aller plus loin", "graphics": []},
+    ]
+
+
     def __init__(
             self,
             entity_id: str,
@@ -234,10 +268,22 @@ class Biso(DibisoReporting):
         self.kwargs = kwargs
 
 
+    @classmethod
+    def available_figures(cls) -> list[str]:
+        """Return the keys of the figures that can be placed in the report sections."""
+        return [
+            cls.figure_name(viz_type, config.get("name", ""))
+            for viz_type, configs in cls.default_visualizations.items()
+            for config in configs
+            if cls.figure_name(viz_type, config.get("name", "")) not in cls.always_generated_figures
+        ]
+
+
     def generate_report(
             self,
             visualizations_to_make: dict[str, list[dict]] | None = None,
-            import_default_visualizations = True
+            import_default_visualizations = True,
+            sections: list[dict] | None = None,
     ):
         """
         Generate the report by calling the specified functions with their parameters to create the desired
@@ -278,6 +324,10 @@ class Biso(DibisoReporting):
             Example: If you don't want to generate the Conferences visualization, you can set
             import_default_visualizations as follows: ``import_default_visualizations = {"Conferences": []}``.
         :type import_default_visualizations: bool
+        :param sections: Ordered layout of the report sections (see ``default_sections``). Only the default
+            visualizations whose figure is placed in a section (plus ``always_generated_figures``) are generated.
+            Defaults to ``default_sections``.
+        :type sections: list[dict] | None
         """
 
         # check that the HAL collection ID is valid
@@ -299,6 +349,21 @@ class Biso(DibisoReporting):
         self.macros_variables["watermarktext"] = self.watermark_text
         self.macros_variables["dibisoplotversion"] = dibisoplot_version
         self.macros_variables["dibisoreportingversion"] = dibisoreporting_version
+
+        sections = copy.deepcopy(sections if sections is not None else self.default_sections)
+        self.macros_variables["report_sections"] = sections
+        figures_to_make = {fig for section in sections for fig in section.get("graphics", [])}
+        unknown_figures = figures_to_make - set(self.available_figures())
+        if unknown_figures:
+            logging.warning(f"Unknown figures in report sections, ignored: {sorted(unknown_figures)}")
+        figures_to_make.update(self.always_generated_figures)
+        self.default_visualizations = {
+            viz_type: [
+                config for config in configs
+                if self.figure_name(viz_type, config.get("name", "")) in figures_to_make
+            ]
+            for viz_type, configs in self.default_visualizations.items()
+        }
 
         super().generate_report(visualizations_to_make, import_default_visualizations)
 

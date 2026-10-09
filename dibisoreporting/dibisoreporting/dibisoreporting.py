@@ -78,6 +78,15 @@ class DibisoReporting:
 
         self.kwargs = kwargs
 
+    @staticmethod
+    def figure_name(viz_type: str, name: str = "") -> str:
+        """
+        Return the key under which a visualization's figure is saved (in figures.json and as SVG file name),
+        e.g. ("CollaborationMap", "world") -> "collaboration_map_world".
+        """
+        snake = re.sub('(?<!^)(?=[A-Z])', '_', viz_type).lower()
+        return f"{snake}_{name}" if name else snake
+
     # ── Template acquisition ────────────────────────────────────────────
 
     def get_html_template_from_path(self):
@@ -303,8 +312,7 @@ class DibisoReporting:
                 stats = viz.fetch_data()
                 fig = viz.get_figure()
 
-                snake = re.sub('(?<!^)(?=[A-Z])', '_', viz_class.__name__).lower()
-                file_name = f"{snake}_{name}" if name else snake
+                file_name = self.figure_name(viz_class.__name__, name)
 
                 html_frag = self._save_figure_as_html(viz, fig, file_name)
                 self._html_figures[file_name] = html_frag

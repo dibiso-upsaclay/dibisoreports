@@ -15,6 +15,7 @@ import urllib.parse
 import requests
 
 import json
+import sqlite3
 from fastapi import FastAPI, HTTPException, Depends, Request, UploadFile, File
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -93,6 +94,17 @@ from .users import (
     delete_old_section_state,
 )
 from .hal_collections import search_collections, collections_refresh_loop
+from .report_templates import (
+    BISO_GRAPHICS,
+    TemplateWrite,
+    init_templates_table,
+    validate_sections,
+    get_templates,
+    get_template,
+    create_template,
+    update_template,
+    delete_template,
+)
 
 
 # Configure logging
@@ -119,6 +131,7 @@ class ReportRequest(BaseModel):
     reporter: str = Field("", description="Name of the person writing the report")
     reporter_email: str = Field("", description="Email of the reporter")
     template_variant: Literal["classic", "basic"] = Field("classic", description="Visual template variant")
+    template_id: Optional[int] = Field(None, description="Report template (sections layout); default: first enabled")
 
 thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=int(os.getenv("THREAD_POOL_MAX_WORKERS")))
 
@@ -129,27 +142,9 @@ compilation_lock = threading.Lock()
 data_fetching_processes: Dict[str, subprocess.Popen] = {}
 process_lock = threading.Lock()
 
-# Section registry per report type
+# Section registry for report types without admin-managed templates (BiSO sections come from the
+# report template saved in context.json as "report_sections")
 REPORT_SECTIONS: Dict[str, list] = {
-    "biso": [
-        {"id": "journals_hal",                  "label": "Liste des revues (HAL)"},
-        {"id": "conferences",                   "label": "Liste des conférences"},
-        {"id": "books",                         "label": "Liste des ouvrages"},
-        {"id": "chapters",                      "label": "Liste des chapitres"},
-        {"id": "works_type",                    "label": "Typologie de la production scientifique"},
-        {"id": "open_access_works",             "label": "Articles en accès ouvert"},
-        {"id": "journals",                      "label": "Revues et voies d'accès (BSO)"},
-        {"id": "collaboration_map_world",       "label": "Carte des collaborations internationales"},
-        {"id": "collaboration_map_europe",      "label": "Carte des collaborations européennes"},
-        {"id": "collaboration_names",           "label": "Collaborations par établissements"},
-        {"id": "private_sector_collaborations", "label": "Collaborations secteur privé"},
-        {"id": "european_projects",             "label": "Projets européens"},
-        {"id": "anr_projects",                  "label": "Projets ANR"},
-        {"id": "data",           "label": "Jeux de données partagés"},
-        {"id": "related_datasets", "label": "Jeux de données associés aux publications HAL"},
-        {"id": "strengths",      "label": "Atouts du laboratoire",  "figure": False},
-        {"id": "recommendations","label": "Préconisations",         "figure": False},
-    ],
     "pubpart": [
         {"id": "topics_collaborations",               "label": "Principales thématiques"},
         {"id": "topics_potential_collaborations",     "label": "Potentiel de collaboration"},
@@ -260,6 +255,7 @@ async def lifespan(_app: FastAPI):
     """
     logger.info("Application startup: Starting background tasks and initializing database.")
     init_database()
+    init_templates_table()
 
     # Start background tasks
     cleanup_task = asyncio.create_task(cleanup_old_compilations())
@@ -776,13 +772,16 @@ def generate_report_project(comp_id: str, request_data: ReportRequest) -> Option
         _acronym = _json.dumps(request_data.entity_acronym)
         _fullname = _json.dumps(request_data.entity_full_name)
         _entity_id = _json.dumps(request_data.entity_id)
-        _ror_id = _json.dumps(request_data.ror_id)
+        _ror_id = _json.dumps(request_data.ror_id or "")
         _reporter = _json.dumps(request_data.reporter)
         _reporter_email = _json.dumps(request_data.reporter_email)
         _template_variant = _json.dumps(request_data.template_variant)
+        _sections = _json.dumps(_json.dumps(compilation_status[comp_id]['report_sections'], ensure_ascii=False))
         process = subprocess.Popen([
             sys.executable, '-c',
             f'''
+import json
+import sqlite3
 import sys
 sys.path.insert(0, {_cwd})
 
@@ -820,7 +819,7 @@ biso_reporting = Biso(
 biso_reporting.macros_variables["template_subdir"] = (
     "dibiso-html-basic" if {_template_variant} == "basic" else "dibiso-html"
 )
-biso_reporting.generate_report()
+biso_reporting.generate_report(sections=json.loads({_sections}))
             '''
         ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         # Store the process reference for cancellation
@@ -1151,13 +1150,24 @@ def _get_available_sections(project_dir: Path) -> list[dict]:
     with open(context_json, encoding="utf-8") as f:
         context = json.load(f)
     report_type = context.get("report_type", "biso")
-    all_sections = REPORT_SECTIONS.get(report_type, REPORT_SECTIONS["biso"])
+    if report_type in REPORT_SECTIONS:
+        all_sections = [
+            {"id": sec["id"], "label": sec["label"], "graphics": [sec["id"]] if sec.get("figure", True) else []}
+            for sec in REPORT_SECTIONS[report_type]
+        ]
+    else:
+        from dibisoreporting import Biso
+        # Projects generated before report templates existed have no saved layout: use the default one
+        layout = context.get("report_sections") or Biso.default_sections
+        all_sections = [
+            {"id": sec["id"], "label": sec["title"], "graphics": sec.get("graphics", [])} for sec in layout
+        ]
 
     result = []
     for sec in all_sections:
-        has_figure = sec.get("figure", True)
-        if not has_figure or sec["id"] in generated_figures:
-            result.append({"id": sec["id"], "label": sec["label"], "has_figure": has_figure and sec["id"] in generated_figures})
+        has_figure = any(graphic in generated_figures for graphic in sec["graphics"])
+        if not sec["graphics"] or has_figure:
+            result.append({"id": sec["id"], "label": sec["label"], "has_figure": has_figure})
     return result
 
 
@@ -1550,6 +1560,74 @@ async def download_html(
 
 # ────────────────────────────────────────────────────────────────────────────
 
+# ── Report templates ─────────────────────────────────────────────────────
+
+@app.get("/templates")
+async def list_available_templates(current_user: Annotated[dict, Depends(get_current_active_user)]):
+    """List the report templates users can generate reports from."""
+    return get_templates(enabled_only=True)
+
+
+@app.get("/admin/templates")
+async def admin_list_templates(current_admin: Annotated[dict, Depends(get_current_admin_user)]):
+    """List all report templates, including disabled ones."""
+    return get_templates()
+
+
+@app.get("/admin/template-graphics")
+async def admin_list_template_graphics(current_admin: Annotated[dict, Depends(get_current_admin_user)]):
+    """List the graphics that can be placed in template sections."""
+    return BISO_GRAPHICS
+
+
+def _validated_template_sections(body: TemplateWrite) -> list[dict]:
+    try:
+        return validate_sections(body.sections)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/admin/templates")
+async def admin_create_template(
+    body: TemplateWrite,
+    current_admin: Annotated[dict, Depends(get_current_admin_user)]
+):
+    """Create a report template."""
+    sections = _validated_template_sections(body)
+    try:
+        return create_template(body.name.strip(), body.enabled, sections)
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=400, detail="A template with this name already exists")
+
+
+@app.put("/admin/templates/{template_id}")
+async def admin_update_template(
+    template_id: int,
+    body: TemplateWrite,
+    current_admin: Annotated[dict, Depends(get_current_admin_user)]
+):
+    """Update a report template (name, availability and sections layout)."""
+    sections = _validated_template_sections(body)
+    try:
+        template = update_template(template_id, body.name.strip(), body.enabled, sections)
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=400, detail="A template with this name already exists")
+    if template is None:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return template
+
+
+@app.delete("/admin/templates/{template_id}")
+async def admin_delete_template(
+    template_id: int,
+    current_admin: Annotated[dict, Depends(get_current_admin_user)]
+):
+    """Delete a report template."""
+    if not delete_template(template_id):
+        raise HTTPException(status_code=404, detail="Template not found")
+    return {"message": "Template deleted"}
+
+
 @app.post("/generate-report")
 async def generate_report_endpoint(
     request: ReportRequest,
@@ -1562,6 +1640,16 @@ async def generate_report_endpoint(
     # Validate the request (Pydantic will handle basic validation)
     logger.info(f"Received report generation request from user {current_user['username']}: {request.dict()}")
 
+    if request.template_id is None:
+        enabled_templates = get_templates(enabled_only=True)
+        template = enabled_templates[0] if enabled_templates else None
+    else:
+        template = get_template(request.template_id)
+        if template and not template["enabled"]:
+            template = None
+    if template is None:
+        raise HTTPException(status_code=400, detail="Report template not found or not available")
+
     # Generate unique compilation ID
     comp_id = str(uuid.uuid4())
 
@@ -1572,6 +1660,7 @@ async def generate_report_endpoint(
             'current_step': 'Initializing...',
             'status': 'running',
             'request_data': request.dict(),  # Store request data for reference
+            'report_sections': template["sections"],
             'user_id': current_user["id"],  # Store user who initiated the request
             'username': current_user["username"],
             'created_at': datetime.now(),

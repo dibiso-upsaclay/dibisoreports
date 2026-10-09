@@ -103,7 +103,7 @@ succeed. `failed` covers data/HTML errors.
 **FastAPI app** (`dibiso-reporting-api/app/main.py`)
 - JWT auth (48-hour tokens, `OAuth2PasswordBearer`)
 - Report jobs run in a `ThreadPoolExecutor` (default 4 workers, configurable via env)
-- `REPORT_SECTIONS` registry defines the ordered sections for BiSO and PubPart
+- BiSO sections come from admin-managed report templates (`app/report_templates.py`, SQLite table `report_templates`, seeded from `Biso.default_sections`): each template is an ordered list of sections (title + ordered graphics); the chosen layout is saved in `context.json` as `report_sections` and rendered by looping over it in `biso.html.j2` (per-graphic text lives in `biso-graphics.html.j2`). `REPORT_SECTIONS` only remains for PubPart
 - Compilation status tracked with progress % and current step; supports cancellation
 - Auto-cleanup of old temp directories (prefix `html_output_`, configurable retention)
 - SVG style-to-attribute conversion (`_convert_svg_style_to_attrs`) for WeasyPrint compatibility
@@ -118,6 +118,7 @@ succeed. `failed` covers data/HTML errors.
   - `POST /export/{comp_id}` — re-render HTML with analyses + produce PDF+ZIP (backs the "Export ZIP" button)
   - `GET /download-pdf?temp_id={comp_id}&file_name=report|biblio` — re-render with analyses + produce just that PDF, then download it (backs the "Report PDF" / "Bibliography PDF" buttons)
   - `GET /download-zip`, `GET /download-html` — download already-produced outputs
+  - `GET /templates` — enabled report templates (for the report form); `GET/POST/PUT/DELETE /admin/templates`, `GET /admin/template-graphics` — template management (admin "Templates" tab)
   - `GET /hal-collections?q=` — autocomplete HAL collection codes (min. 3 chars); backed by a local copy of the HAL OAI `ListSets` "collection:" sets (`app/hal_collections.py`, stored in `USERS_DATABASE_DIRECTORY`, fetched at startup if missing/stale and refreshed nightly)
   - `GET /template-assets/{file_path}` — serve CSS/image assets from the HTML template (public, restricted to `css/` and `assets/`)
 

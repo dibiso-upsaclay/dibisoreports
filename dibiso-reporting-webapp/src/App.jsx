@@ -48,6 +48,33 @@ const TRANSLATIONS = {
     adminRole: "Admin",
     registerUserBtn: "Register User",
     userManagement: "User Management",
+    tabMembers: "Members",
+    tabTemplates: "Templates",
+    tplListTitle: "Report templates",
+    tplListDescription: "Templates checked as available can be chosen by users when generating a report.",
+    tplNew: "New template",
+    tplName: "Name",
+    tplAvailable: "Available to users",
+    tplEdit: "Edit",
+    tplDuplicate: "Duplicate",
+    tplCopyName: (name) => `${name} (copy)`,
+    tplSave: "Save template",
+    tplSaved: "Template saved.",
+    tplSaveFailed: "Failed to save the template",
+    tplDeleteFailed: "Failed to delete the template",
+    tplConfirmDelete: (name) => `Delete the template "${name}"?`,
+    tplConfirmDiscard: "Discard unsaved changes to the current template?",
+    tplEditorHelp: "Drag graphics from the list on the right into sections, drag sections by their handle to reorder them. Drop a graphic back on the list to remove it. A section without graphics is a free-text section.",
+    tplMoveSection: "Drag to move the section",
+    tplDeleteSection: "Delete the section",
+    tplConfirmDeleteSection: (title) => `Delete the section "${title}"?`,
+    tplRemoveGraphic: "Remove the graphic",
+    tplNewSectionTitle: "New section",
+    tplAddSection: "+ Add a section",
+    tplTextOnlySection: "No graphics: free-text section",
+    tplAvailableGraphics: "Available graphics",
+    tplAllGraphicsUsed: "All graphics are used.",
+    tplInputRor: "needs ROR ID",
     statusHeader: "Status",
     actionsHeader: "Actions",
     active: "Active",
@@ -83,7 +110,10 @@ const TRANSLATIONS = {
     reporterEmail: "Contact email",
     reporterEmailDescription: "Email address shown on the last page. Optional.",
     reporterEmailPlaceholder: "e.g., firstname.lastname@example.fr",
-    templateVariantLabel: "Template",
+    reportTemplateLabel: "Report template",
+    reportTemplateDescription: "Sections and graphics included in the report.",
+    noReportTemplate: "No report template is available. Please contact an administrator.",
+    templateVariantLabel: "Visual style",
     templateVariantDescription: "Visual style of the report.",
     templateVariantClassic: "Paris-Saclay (Classic)",
     templateVariantBasic: "Basic (Generic)",
@@ -208,6 +238,33 @@ const TRANSLATIONS = {
     adminRole: "Administrateur",
     registerUserBtn: "Créer l'utilisateur",
     userManagement: "Gestion des utilisateurs",
+    tabMembers: "Membres",
+    tabTemplates: "Modèles",
+    tplListTitle: "Modèles de rapport",
+    tplListDescription: "Les modèles cochés comme disponibles peuvent être choisis par les utilisateurs pour générer un rapport.",
+    tplNew: "Nouveau modèle",
+    tplName: "Nom",
+    tplAvailable: "Disponible pour les utilisateurs",
+    tplEdit: "Modifier",
+    tplDuplicate: "Dupliquer",
+    tplCopyName: (name) => `${name} (copie)`,
+    tplSave: "Enregistrer le modèle",
+    tplSaved: "Modèle enregistré.",
+    tplSaveFailed: "Échec de l'enregistrement du modèle",
+    tplDeleteFailed: "Échec de la suppression du modèle",
+    tplConfirmDelete: (name) => `Supprimer le modèle « ${name} » ?`,
+    tplConfirmDiscard: "Abandonner les modifications non enregistrées du modèle en cours ?",
+    tplEditorHelp: "Glissez les graphiques de la liste de droite dans les sections, glissez les sections par leur poignée pour les réordonner. Déposez un graphique sur la liste pour le retirer. Une section sans graphique est une section de texte libre.",
+    tplMoveSection: "Glisser pour déplacer la section",
+    tplDeleteSection: "Supprimer la section",
+    tplConfirmDeleteSection: (title) => `Supprimer la section « ${title} » ?`,
+    tplRemoveGraphic: "Retirer le graphique",
+    tplNewSectionTitle: "Nouvelle section",
+    tplAddSection: "+ Ajouter une section",
+    tplTextOnlySection: "Aucun graphique : section de texte libre",
+    tplAvailableGraphics: "Graphiques disponibles",
+    tplAllGraphicsUsed: "Tous les graphiques sont utilisés.",
+    tplInputRor: "nécessite l'ID ROR",
     statusHeader: "Statut",
     actionsHeader: "Actions",
     active: "Actif",
@@ -243,7 +300,10 @@ const TRANSLATIONS = {
     reporterEmail: "Email référent·e",
     reporterEmailDescription: "Adresse email affichée sur la dernière page. Optionnel.",
     reporterEmailPlaceholder: "ex. prenom.nom@exemple.fr",
-    templateVariantLabel: "Modèle",
+    reportTemplateLabel: "Modèle de rapport",
+    reportTemplateDescription: "Sections et graphiques inclus dans le rapport.",
+    noReportTemplate: "Aucun modèle de rapport n'est disponible. Veuillez contacter un administrateur.",
+    templateVariantLabel: "Style visuel",
     templateVariantDescription: "Style visuel du rapport.",
     templateVariantClassic: "Paris-Saclay (Classique)",
     templateVariantBasic: "Basique (Générique)",
@@ -330,6 +390,470 @@ const TRANSLATIONS = {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ── Admin: report templates editor ───────────────────────────────────────────
+// Templates are ordered lists of sections; each section holds an ordered list of graphics.
+// Graphics and sections are rearranged with native HTML5 drag and drop.
+
+const emptyTemplateDraft = () => ({ id: null, name: '', enabled: true, sections: [] });
+
+const TemplatesAdmin = ({ token, tr, onTemplatesChanged }) => {
+  const [templates, setTemplates] = useState([]);
+  const [graphics, setGraphics] = useState([]);
+  const [draft, setDraft] = useState(null);
+  const [dirty, setDirty] = useState(false);
+  const [message, setMessage] = useState(null);
+  const [errorMsg, setErrorMsg] = useState(null);
+  const [dropTarget, setDropTarget] = useState(null);
+  const dragItem = useRef(null);
+
+  const authHeaders = { 'Authorization': `Bearer ${token}` };
+
+  const loadTemplates = async () => {
+    const res = await fetch(`${API_BASE_URL}/admin/templates`, { headers: authHeaders });
+    if (!res.ok) throw new Error('Failed to fetch templates');
+    const data = await res.json();
+    setTemplates(data);
+    return data;
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const [, graphicsRes] = await Promise.all([
+          loadTemplates(),
+          fetch(`${API_BASE_URL}/admin/template-graphics`, { headers: authHeaders }),
+        ]);
+        if (graphicsRes.ok) setGraphics(await graphicsRes.json());
+      } catch (err) {
+        setErrorMsg(err.message);
+      }
+    };
+    init();
+  }, []);
+
+  const graphicsById = Object.fromEntries(graphics.map(g => [g.id, g]));
+  const usedGraphics = new Set((draft?.sections || []).flatMap(s => s.graphics));
+  const inputLabel = (field) => (field === 'ror_id' ? tr.tplInputRor : field);
+
+  const confirmDiscard = () => !dirty || confirm(tr.tplConfirmDiscard);
+
+  const selectTemplate = (template) => {
+    if (!confirmDiscard()) return;
+    setDraft(JSON.parse(JSON.stringify(template)));
+    setDirty(false);
+    setMessage(null);
+    setErrorMsg(null);
+  };
+
+  const newTemplate = (source) => {
+    if (!confirmDiscard()) return;
+    const draftTemplate = emptyTemplateDraft();
+    if (source) {
+      draftTemplate.name = tr.tplCopyName(source.name);
+      draftTemplate.sections = source.sections.map(s => ({ ...s, graphics: [...s.graphics] }));
+    }
+    setDraft(draftTemplate);
+    setDirty(true);
+    setMessage(null);
+    setErrorMsg(null);
+  };
+
+  const updateDraft = (updater) => {
+    setDraft(prev => updater(JSON.parse(JSON.stringify(prev))));
+    setDirty(true);
+    setMessage(null);
+  };
+
+  const saveTemplate = async (template) => {
+    const isNew = template.id === null;
+    const res = await fetch(
+      isNew ? `${API_BASE_URL}/admin/templates` : `${API_BASE_URL}/admin/templates/${template.id}`,
+      {
+        method: isNew ? 'POST' : 'PUT',
+        headers: { ...authHeaders, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: template.name, enabled: template.enabled, sections: template.sections }),
+      }
+    );
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      const detail = Array.isArray(errorData.detail) ? errorData.detail.map(d => d.msg).join(', ') : errorData.detail;
+      throw new Error(detail || tr.tplSaveFailed);
+    }
+    const saved = await res.json();
+    await loadTemplates();
+    onTemplatesChanged();
+    return saved;
+  };
+
+  const handleSave = async () => {
+    setErrorMsg(null);
+    try {
+      const saved = await saveTemplate(draft);
+      setDraft(saved);
+      setDirty(false);
+      setMessage(tr.tplSaved);
+    } catch (err) {
+      setErrorMsg(err.message);
+    }
+  };
+
+  const handleToggleEnabled = async (template) => {
+    setErrorMsg(null);
+    try {
+      const saved = await saveTemplate({ ...template, enabled: !template.enabled });
+      if (draft && draft.id === template.id) setDraft(prev => ({ ...prev, enabled: saved.enabled }));
+    } catch (err) {
+      setErrorMsg(err.message);
+    }
+  };
+
+  const handleDelete = async (template) => {
+    if (!confirm(tr.tplConfirmDelete(template.name))) return;
+    setErrorMsg(null);
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/templates/${template.id}`, { method: 'DELETE', headers: authHeaders });
+      if (!res.ok) throw new Error(tr.tplDeleteFailed);
+      if (draft && draft.id === template.id) {
+        setDraft(null);
+        setDirty(false);
+      }
+      await loadTemplates();
+      onTemplatesChanged();
+    } catch (err) {
+      setErrorMsg(err.message);
+    }
+  };
+
+  // ── Drag and drop ──
+  // dragItem: { type: 'graphic', id, from: sectionIndex | null } or { type: 'section', index }
+
+  const onDragStart = (e, item) => {
+    dragItem.current = item;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', item.id || String(item.index));
+    e.stopPropagation();
+  };
+
+  const onDragEnd = () => {
+    dragItem.current = null;
+    setDropTarget(null);
+  };
+
+  const allowDrop = (e, target, accepts) => {
+    const item = dragItem.current;
+    if (!item || !accepts.includes(item.type)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (dropTarget !== target) setDropTarget(target);
+  };
+
+  // Drop a graphic in section `sectionIndex` before position `position` (end of the list if null)
+  const dropGraphic = (e, sectionIndex, position) => {
+    const item = dragItem.current;
+    if (!item || item.type !== 'graphic') return;
+    e.preventDefault();
+    e.stopPropagation();
+    updateDraft(d => {
+      let insertAt = position === null ? d.sections[sectionIndex].graphics.length : position;
+      if (item.from !== null) {
+        const fromGraphics = d.sections[item.from].graphics;
+        const fromIndex = fromGraphics.indexOf(item.id);
+        fromGraphics.splice(fromIndex, 1);
+        if (item.from === sectionIndex && fromIndex < insertAt) insertAt -= 1;
+      }
+      d.sections[sectionIndex].graphics.splice(insertAt, 0, item.id);
+      return d;
+    });
+    onDragEnd();
+  };
+
+  // Drop a graphic back on the palette: remove it from the template
+  const dropOnPalette = (e) => {
+    const item = dragItem.current;
+    if (!item || item.type !== 'graphic') return;
+    e.preventDefault();
+    if (item.from !== null) removeGraphic(item.from, item.id);
+    onDragEnd();
+  };
+
+  // Drop a section before section `targetIndex`
+  const dropSection = (e, targetIndex) => {
+    const item = dragItem.current;
+    if (!item || item.type !== 'section') return;
+    e.preventDefault();
+    e.stopPropagation();
+    updateDraft(d => {
+      const [moved] = d.sections.splice(item.index, 1);
+      d.sections.splice(item.index < targetIndex ? targetIndex - 1 : targetIndex, 0, moved);
+      return d;
+    });
+    onDragEnd();
+  };
+
+  const removeGraphic = (sectionIndex, graphicId) => updateDraft(d => {
+    d.sections[sectionIndex].graphics = d.sections[sectionIndex].graphics.filter(g => g !== graphicId);
+    return d;
+  });
+
+  const removeSection = (sectionIndex) => {
+    if (!confirm(tr.tplConfirmDeleteSection(draft.sections[sectionIndex].title))) return;
+    updateDraft(d => {
+      d.sections.splice(sectionIndex, 1);
+      return d;
+    });
+  };
+
+  const addSection = () => updateDraft(d => {
+    d.sections.push({ id: null, title: tr.tplNewSectionTitle, graphics: [] });
+    return d;
+  });
+
+  const graphicChip = (graphicId, sectionIndex, position) => {
+    const graphic = graphicsById[graphicId];
+    const target = `g-${sectionIndex}-${position}`;
+    return (
+      <li
+        key={graphicId}
+        draggable
+        onDragStart={(e) => onDragStart(e, { type: 'graphic', id: graphicId, from: sectionIndex })}
+        onDragEnd={onDragEnd}
+        onDragOver={(e) => allowDrop(e, target, ['graphic'])}
+        onDrop={(e) => dropGraphic(e, sectionIndex, position)}
+        className={`flex items-center justify-between px-2 py-1 bg-gray-600 rounded text-sm text-white cursor-move ${
+          dropTarget === target ? 'border-t-2 border-teal-400' : ''
+        }`}
+      >
+        <span>
+          {graphic ? graphic.label : graphicId}
+          {graphic?.inputs?.length > 0 && (
+            <span className="ml-2 text-xs text-amber-300">({graphic.inputs.map(inputLabel).join(', ')})</span>
+          )}
+        </span>
+        <button
+          type="button"
+          onClick={() => removeGraphic(sectionIndex, graphicId)}
+          className="ml-2 text-gray-300 hover:text-red-400"
+          title={tr.tplRemoveGraphic}
+        >
+          <XCircle className="w-4 h-4" />
+        </button>
+      </li>
+    );
+  };
+
+  return (
+    <div>
+      {errorMsg && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">{errorMsg}</div>
+      )}
+      {message && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">{message}</div>
+      )}
+
+      {/* Template list */}
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-3">
+          <h4 className="text-lg font-semibold text-white">{tr.tplListTitle}</h4>
+          <button
+            type="button"
+            onClick={() => newTemplate(null)}
+            className="px-3 py-1.5 bg-teal-600 rounded-md text-white text-sm hover:bg-teal-700"
+          >
+            {tr.tplNew}
+          </button>
+        </div>
+        <p className="text-sm text-gray-400 mb-3">{tr.tplListDescription}</p>
+        <table className="min-w-full bg-gray-700 rounded-lg">
+          <thead>
+            <tr className="border-b border-gray-600">
+              <th className="px-4 py-2 text-left text-gray-300">{tr.tplName}</th>
+              <th className="px-4 py-2 text-left text-gray-300">{tr.tplAvailable}</th>
+              <th className="px-4 py-2 text-left text-gray-300">{tr.actionsHeader}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {templates.map(template => (
+              <tr
+                key={template.id}
+                className={`border-b border-gray-600 ${draft?.id === template.id ? 'bg-gray-600' : ''}`}
+              >
+                <td className="px-4 py-2 text-white">{template.name}</td>
+                <td className="px-4 py-2">
+                  <input
+                    type="checkbox"
+                    checked={template.enabled}
+                    onChange={() => handleToggleEnabled(template)}
+                    className="w-4 h-4 accent-teal-500"
+                  />
+                </td>
+                <td className="px-4 py-2 space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => selectTemplate(template)}
+                    className="bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded text-sm text-white"
+                  >
+                    {tr.tplEdit}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => newTemplate(template)}
+                    className="bg-gray-500 hover:bg-gray-600 px-2 py-1 rounded text-sm text-white"
+                  >
+                    {tr.tplDuplicate}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(template)}
+                    className="bg-red-800 hover:bg-red-900 px-2 py-1 rounded text-sm text-white"
+                  >
+                    {tr.delete}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Template editor */}
+      {draft && (
+        <div className="border-t border-gray-600 pt-4">
+          <div className="flex flex-wrap items-end gap-4 mb-4">
+            <div className="flex-1 min-w-[200px]">
+              <label htmlFor="tpl-name" className="block text-sm font-medium text-gray-300 mb-2">{tr.tplName}</label>
+              <input
+                id="tpl-name"
+                type="text"
+                value={draft.name}
+                onChange={(e) => updateDraft(d => ({ ...d, name: e.target.value }))}
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-gray-300 pb-2">
+              <input
+                type="checkbox"
+                checked={draft.enabled}
+                onChange={(e) => updateDraft(d => ({ ...d, enabled: e.target.checked }))}
+                className="w-4 h-4 accent-teal-500"
+              />
+              {tr.tplAvailable}
+            </label>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!dirty}
+              className="px-4 py-2 bg-teal-600 rounded-md text-white hover:bg-teal-700 disabled:bg-gray-600 disabled:opacity-60"
+            >
+              {tr.tplSave}
+            </button>
+          </div>
+          <p className="text-sm text-gray-400 mb-4">{tr.tplEditorHelp}</p>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            {/* Sections */}
+            <div className="md:col-span-2 space-y-3">
+              {draft.sections.map((section, sectionIndex) => (
+                <div
+                  key={section.id || `new-${sectionIndex}`}
+                  onDragOver={(e) => allowDrop(e, `s-${sectionIndex}`, ['section'])}
+                  onDrop={(e) => dropSection(e, sectionIndex)}
+                  className={`bg-gray-700 rounded-lg p-3 ${
+                    dropTarget === `s-${sectionIndex}` ? 'border-t-4 border-teal-400' : 'border border-gray-600'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      draggable
+                      onDragStart={(e) => onDragStart(e, { type: 'section', index: sectionIndex })}
+                      onDragEnd={onDragEnd}
+                      className="cursor-move text-gray-400 select-none px-1"
+                      title={tr.tplMoveSection}
+                    >
+                      ⠿
+                    </span>
+                    <input
+                      type="text"
+                      value={section.title}
+                      onChange={(e) => updateDraft(d => {
+                        d.sections[sectionIndex].title = e.target.value;
+                        return d;
+                      })}
+                      className="flex-1 px-2 py-1 bg-gray-800 border border-gray-600 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeSection(sectionIndex)}
+                      className="text-gray-400 hover:text-red-400"
+                      title={tr.tplDeleteSection}
+                    >
+                      <XCircle className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <ul
+                    onDragOver={(e) => allowDrop(e, `g-${sectionIndex}-end`, ['graphic'])}
+                    onDrop={(e) => dropGraphic(e, sectionIndex, null)}
+                    className={`space-y-1 min-h-[2.25rem] p-1 rounded border border-dashed ${
+                      dropTarget === `g-${sectionIndex}-end` ? 'border-teal-400 bg-gray-600' : 'border-gray-500'
+                    }`}
+                  >
+                    {section.graphics.map((graphicId, position) => graphicChip(graphicId, sectionIndex, position))}
+                    {section.graphics.length === 0 && (
+                      <li className="text-xs text-gray-400 italic px-1 py-1">{tr.tplTextOnlySection}</li>
+                    )}
+                  </ul>
+                </div>
+              ))}
+              <div
+                onDragOver={(e) => allowDrop(e, 's-end', ['section'])}
+                onDrop={(e) => dropSection(e, draft.sections.length)}
+                className={`rounded ${dropTarget === 's-end' ? 'border-t-4 border-teal-400' : ''}`}
+              >
+                <button
+                  type="button"
+                  onClick={addSection}
+                  className="w-full py-2 border border-dashed border-gray-500 rounded-lg text-gray-300 hover:bg-gray-700 text-sm"
+                >
+                  {tr.tplAddSection}
+                </button>
+              </div>
+            </div>
+
+            {/* Available graphics palette */}
+            <div
+              onDragOver={(e) => allowDrop(e, 'palette', ['graphic'])}
+              onDrop={dropOnPalette}
+              className={`bg-gray-900 rounded-lg p-3 self-start ${
+                dropTarget === 'palette' ? 'ring-2 ring-teal-400' : ''
+              }`}
+            >
+              <h5 className="text-sm font-semibold text-white mb-2">{tr.tplAvailableGraphics}</h5>
+              <ul className="space-y-1">
+                {graphics.filter(g => !usedGraphics.has(g.id)).map(graphic => (
+                  <li
+                    key={graphic.id}
+                    draggable
+                    onDragStart={(e) => onDragStart(e, { type: 'graphic', id: graphic.id, from: null })}
+                    onDragEnd={onDragEnd}
+                    className="px-2 py-1 bg-gray-700 rounded text-sm text-white cursor-move"
+                  >
+                    {graphic.label}
+                    {graphic.inputs?.length > 0 && (
+                      <span className="ml-2 text-xs text-amber-300">({graphic.inputs.map(inputLabel).join(', ')})</span>
+                    )}
+                  </li>
+                ))}
+                {graphics.every(g => usedGraphics.has(g.id)) && (
+                  <li className="text-xs text-gray-400 italic">{tr.tplAllGraphicsUsed}</li>
+                )}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ReportGeneratorInterface = () => {
   const [isCompiling, setIsCompiling] = useState(false);
   const [compilationResult, setCompilationResult] = useState(null);
@@ -353,8 +877,11 @@ const ReportGeneratorInterface = () => {
     maxEntities: 1000,
     reporter: '',
     reporterEmail: '',
-    templateVariant: 'classic'
+    templateVariant: 'classic',
+    templateId: ''
   });
+  // Report templates the user can choose from
+  const [reportTemplates, setReportTemplates] = useState([]);
   // HAL collection code autocomplete
   const [collectionSuggestions, setCollectionSuggestions] = useState([]);
   const [showCollectionSuggestions, setShowCollectionSuggestions] = useState(false);
@@ -380,6 +907,7 @@ const ReportGeneratorInterface = () => {
   });
   // Admin control panel state
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [adminTab, setAdminTab] = useState('members');
   const [users, setUsers] = useState([]);
   const [newUser, setNewUser] = useState({
     username: '',
@@ -428,6 +956,7 @@ const ReportGeneratorInterface = () => {
             setIsAuthenticated(true);
             setCurrentUser(userData);
             fetchProfile();
+            fetchReportTemplates();
             if (userData.role === 'admin') {
               fetchUsers();
             }
@@ -448,6 +977,29 @@ const ReportGeneratorInterface = () => {
     };
     checkAuthStatus();
   }, [token]);
+
+  // Fetch the report templates available to users; keep the current choice if it is still available
+  const fetchReportTemplates = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/templates`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Failed to fetch report templates');
+      const templatesData = await response.json();
+      setReportTemplates(templatesData);
+      setFormData(prev => ({
+        ...prev,
+        templateId: templatesData.some(t => String(t.id) === prev.templateId)
+          ? prev.templateId
+          : (templatesData[0] ? String(templatesData[0].id) : '')
+      }));
+    } catch (err) {
+      console.error('Error fetching report templates:', err);
+    }
+  };
+
+  const selectedTemplate = reportTemplates.find(t => String(t.id) === formData.templateId);
+  const templateNeedsInput = (field) => !!selectedTemplate && selectedTemplate.required_inputs.includes(field);
 
   // Fetch users for admin panel
   const fetchUsers = async () => {
@@ -974,11 +1526,12 @@ const ReportGeneratorInterface = () => {
           entity_acronym: formData.entityAcronym,
           entity_full_name: formData.entityFullName,
           entity_id: formData.entityId,
-          ror_id: formData.rorId,
+          ror_id: templateNeedsInput('ror_id') ? formData.rorId : null,
           max_entities: formData.maxEntities,
           reporter: formData.reporter,
           reporter_email: formData.reporterEmail,
-          template_variant: formData.templateVariant
+          template_variant: formData.templateVariant,
+          template_id: selectedTemplate ? selectedTemplate.id : null
         })
       });
       if (!response.ok) {
@@ -1096,7 +1649,7 @@ const ReportGeneratorInterface = () => {
     if (existing) {
       existing.replaceWith(editor);
     } else {
-      var placeholder = section.querySelector('.dibiso-info');
+      var placeholder = section.querySelector('.analysis-placeholder');
       if (placeholder) placeholder.replaceWith(editor);
       else section.appendChild(editor);
     }
@@ -1732,7 +2285,7 @@ const ReportGeneratorInterface = () => {
           {/* Admin Control Panel Modal */}
           {showAdminPanel && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className="bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-4xl max-h-screen overflow-y-auto">
+              <div className="bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-5xl max-h-screen overflow-y-auto">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-semibold text-white">{tr.adminPanelTitle}</h3>
                   <button
@@ -1751,6 +2304,26 @@ const ReportGeneratorInterface = () => {
                     <p className="text-red-600 mt-1">{authError}</p>
                   </div>
                 )}
+                <div className="flex border-b border-gray-600 mb-6">
+                  {[['members', tr.tabMembers], ['templates', tr.tabTemplates]].map(([tab, label]) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setAdminTab(tab)}
+                      className={`px-4 py-2 -mb-px border-b-2 text-sm font-medium ${
+                        adminTab === tab
+                          ? 'border-teal-500 text-white'
+                          : 'border-transparent text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {adminTab === 'templates' && (
+                  <TemplatesAdmin token={token} tr={tr} onTemplatesChanged={fetchReportTemplates} />
+                )}
+                {adminTab === 'members' && (<>
                 <div className="mb-6">
                   <h4 className="text-lg font-semibold text-white mb-4">{tr.registerNewUser}</h4>
                   <form onSubmit={handleRegisterUserSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1903,6 +2476,7 @@ const ReportGeneratorInterface = () => {
                     </table>
                   </div>
                 </div>
+                </>)}
               </div>
             </div>
           )}
@@ -1914,6 +2488,30 @@ const ReportGeneratorInterface = () => {
                 {tr.reportParameters}
               </h3>
               <div className="grid md:grid-cols-2 gap-6">
+                {/* Report template */}
+                <div className="md:col-span-2">
+                  <label htmlFor="templateId" className="block text-sm font-medium text-gray-300 mb-2">
+                    {tr.reportTemplateLabel} <span className="text-red-400">*</span>
+                    <span className="text-gray-500 font-light"> <br/>
+                      {tr.reportTemplateDescription}
+                    </span>
+                  </label>
+                  {reportTemplates.length > 0 ? (
+                    <select
+                      id="templateId"
+                      name="templateId"
+                      value={formData.templateId}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    >
+                      {reportTemplates.map(t => (
+                        <option key={t.id} value={String(t.id)}>{t.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="text-sm text-amber-300">{tr.noReportTemplate}</p>
+                  )}
+                </div>
                 {/* Year Input */}
                 <div>
                   <label htmlFor="year" className="block text-sm font-medium text-gray-300 mb-2">
@@ -1974,7 +2572,8 @@ const ReportGeneratorInterface = () => {
                     )}
                   </div>
                 </div>
-                {/* ROR ID Input */}
+                {/* ROR ID Input (only for templates with graphics needing it) */}
+                {templateNeedsInput('ror_id') && (
                 <div>
                   <label htmlFor="rorId" className="block text-sm font-medium text-gray-300 mb-2">
                     {tr.rorLabel}
@@ -1992,6 +2591,7 @@ const ReportGeneratorInterface = () => {
                     placeholder={tr.rorPlaceholder}
                   />
                 </div>
+                )}
                 {/* Lab Acronym Input */}
                 <div>
                   <label htmlFor="entityAcronym" className="block text-sm font-medium text-gray-300 mb-2">
@@ -2108,7 +2708,7 @@ const ReportGeneratorInterface = () => {
             <div className="text-center mb-8">
               <button
                 onClick={handleGeneration}
-                disabled={isCompiling || polling || !isAuthenticated || isExporting}
+                disabled={isCompiling || polling || !isAuthenticated || isExporting || !selectedTemplate}
                 className="bg-teal-700 hover:bg-teal-800 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-60 text-white font-semibold py-3 px-8 rounded-lg transition duration-300 flex items-center justify-center mx-auto space-x-2 shadow-md"
               >
                 {isCompiling || polling ? (
